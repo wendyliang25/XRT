@@ -48,7 +48,7 @@ if (NOT WIN32)
   endif()
 else()
     set(BOOST_ROOT C:/Xilinx/XRT/ext)
-    find_package(Boost)
+    find_package(Boost CONFIG)
     include_directories(${Boost_INCLUDE_DIRS})
 endif(NOT WIN32)
 

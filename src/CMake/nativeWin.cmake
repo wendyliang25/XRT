@@ -23,11 +23,17 @@ endif(GIT_FOUND)
 
 include(CMake/components.cmake)
 
-include(FindBoost)
+
 set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_LIBS ON)
-find_package(Boost
-  REQUIRED COMPONENTS system filesystem program_options)
+if(CMAKE_VERSION VERSION_GREATER "3.29")
+  find_package(Boost CONFIG
+    REQUIRED HINTS "${BOOST_ROOT}" COMPONENTS system filesystem program_options)
+else(CMAKE_VERSION VERSION_GREATER "3.29")
+  include(FindBoost)
+  find_package(Boost
+    REQUIRED COMPONENTS system filesystem program_options)
+endif(CMAKE_VERSION VERSION_GREATER "3.29")
 
 # Boost_VERSION_STRING is not working properly, use our own macro
 set(XRT_BOOST_VERSION ${Boost_MAJOR_VERSION}.${Boost_MINOR_VERSION}.${Boost_SUBMINOR_VERSION})

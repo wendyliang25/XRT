@@ -6,6 +6,7 @@ import re
 import sys
 from typing import List, Tuple
 # implemented modules
+import cpp_mangled_name_parser
 import parse_cpp_func_args
 
 def get_cpp_files(root_dir):
@@ -25,7 +26,7 @@ def get_header_files(header_dir):
     return header_files
 
 def read_file_skip_comments(file_path):
-    with open(file_path, 'r') as file:
+    with open(file_path, 'r', encoding='utf-8') as file:
         content = file.read()
 
     # Regular expression to match C++ comments
@@ -74,7 +75,7 @@ def extract_functions_from_file(file, is_header=False, old_types=None):
     if old_types:
         types_map = old_types
     else:
-        types_map = {}
+        types_map = set()
     scope_stack = []
     decls = set()
     print(f"***** trying to extract functions from {file} ******")
@@ -216,7 +217,6 @@ def extract_functions_from_file(file, is_header=False, old_types=None):
     return decls, types_map
 
 def update_func_arg_type(func, func_class, type_info: dict, types_map):
-    print(f"func: {func}, type_info: {type_info}")
     type_i = type_info['type']
     if not type_i:
         return func
@@ -240,7 +240,9 @@ def update_func_adjust_args(func, types_map):
     #implementation
     func = parse_cpp_func_args.rm_func_default_vals(func)
 
-    #TODO: inject function names if arugments don't have a name in its declaration
+    #inject function names if arugments don't have a name in its declaration
+    # parse_cpp_function_declaration() assumes argument names always there
+    # and thus, will need to inject arguments names first
     func = parse_cpp_func_args.inject_func_args_names(func)
     func_name, func_class, ret_tinfo, args_tinfo = parse_cpp_func_args.parse_cpp_function_declaration(decl=func)
     # replace each type with class information
@@ -277,6 +279,10 @@ def main():
     parser.add_argument('--diff', nargs='?', const="stdout",
                         help='Output diff between headers and cpps scanning, if no file specified, will output to stdout',
                         default=None)
+    parser.add_argument('--gen_func_lookup', help='Generate functions mangled names lookup table.', action="store_true", default=False)
+    parser.add_argument('--gen_wrapper', help='Generate wrapper library implementation', action="store_true", default=False)
+    parser.add_argument('--xrt_src', help='XRT source root, which is used to locate xrt header. Required for --gen_func_lookup.', default=None)
+    parser.add_argument('--bld_dir', help='Build directort, required for generating mangled functions lookup table.', default=None)
     args = parser.parse_args()
 
     header_files = get_header_files(args.header_dir)
@@ -286,7 +292,7 @@ def main():
       cpp_files = None
 
     header_funcs = set()
-    types_map = {}
+    types_map = ()
     for h in header_files:
         funcs, types_map = extract_functions_from_file(file=h, is_header=True, old_types=types_map)
         header_funcs.update(funcs)
@@ -329,6 +335,16 @@ def main():
         if only_cpp:
             print(f"**** Outputing diffs -- cpp ****")
             output_funcs(only_cpp, ofile=diff_file, append=True, prefix="CO: ")
+
+    if args.gen_func_lookup:
+        if not args.xrt_src:
+            sys.exit("XRT source directory is required to functions mangled names lookup table")
+        if not args.bld_dir:
+            sys.exit("build directory is required to generate functions mangled names lookup table")
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        out_f = args.bld_dir + "/funcs_mangled_lookup.cpp"
+        mangled_names_f = cpp_mangled_name_parser.gen_mangled_funcs_names(funcs=adjust_funcs_h, xrt_src_root=args.xrt_src,
+            script_dir=script_dir, build_dir=args.bld_dir, out_cpp=out_f)
 
 if __name__ == '__main__':
     main()

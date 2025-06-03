@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import re
+import sys
 from typing import List, Tuple
 
 def inject_func_args_names(decl: str):
@@ -36,10 +37,9 @@ def inject_func_args_names(decl: str):
     new_args = []
     i = 0
     for arg in args:
-        #print(f"_func: decl: {decl}; arg: {arg}")
         amatch = re.search(r'[*&>]\s*,$', arg.strip() + ",")
         if not amatch:
-            amatch = re.search(r'^\w\s*,$', arg.strip() + ",")
+            amatch = re.search(r'^\w+\s*,$', arg.strip() + ",")
         if not amatch:
             amatch = re.search(r'(const|constexpr|__restrict__|restrct)\s*,$', arg.strip() + ",")
         # no argument pattern
@@ -78,7 +78,7 @@ def remove_constraints(type_str: str) -> str:
 # TODO: there can be better way to merge func and operator header/C pattern
 func_pattern = re.compile(
     r'''(?P<export>\s*XCL_DRIVER_DLLESPEC|XRT_API_EXPORT|XCL_DRIVER_DLLESPEC\s+)?  # export disclaimer
-        (?P<ret_type>[a-zA-Z_][\w:<>\s*&~\*,]*\s+)?    # return type (may be empty for ctor/dtor)
+        (?P<ret_type>[a-zA-Z_][\w:<>\s*&~\*,]*\s+[&*]?)?    # return type (may be empty for ctor/dtor)
         (?P<class>[a-zA-Z_][\w:]*::)?               # optional class name
         (?P<func>[~]?[a-zA-Z_]\w*)\s*               # function name (may start with ~ for dtor)
         \((?P<args>[\(\)\w\*&,:<>\s=.{}]*)\)\s*                     # arguments
@@ -99,7 +99,7 @@ operator_pattern = re.compile(
 func_h_pattern = re.compile(
     r'''(?P<export>\s*XCL_DRIVER_DLLESPEC|XRT_API_EXPORT)\s+  # export disclaimer
         (?P<explicit>\s*explicit\s+)?                  # explicit property
-        (?P<ret_type>[a-zA-Z_][\w:<>\s*&~\*,]*\s+)?    # return type (may be empty for ctor/dtor)
+        (?P<ret_type>[a-zA-Z_][\w:<>\s*&~\*,]*\s+[&*]?)?    # return type (may be empty for ctor/dtor)
         (?P<class>[a-zA-Z_][\w:]*::)?               # optional class name
         (?P<func>[~]?[a-zA-Z_]\w*)\s*               # function name (may start with ~ for dtor)
         \((?P<args>[\(\)\w\*&,:<>\s=.{}]*)\)\s*                     # arguments
@@ -110,7 +110,7 @@ func_h_pattern = re.compile(
 )
 func_c_pattern = re.compile(
     r'''(?P<export>\s*XCL_DRIVER_DLLESPEC|XRT_API_EXPORT|XCL_DRIVER_DLLESPEC\s+)?  # export disclaimer
-        (?P<ret_type>[a-zA-Z_][\w:<>\s*&~\*,]*\s+)?    # return type (may be empty for ctor/dtor)
+        (?P<ret_type>[a-zA-Z_][\w:<>\s*&~\*,]*\s+[&*]?)?    # return type (may be empty for ctor/dtor)
         (?P<class>[a-zA-Z_][\w:]*::)?               # optional class name
         (?P<func>[~]?[a-zA-Z_]\w*)\s*               # function name (may start with ~ for dtor)
         \((?P<args>[\(\)\w\*&,:<>\s=.{}]*)\)\s*                     # arguments
@@ -272,8 +272,24 @@ def print_type_details(type_info: dict, indent=0):
         for t in type_info['template_args']:
             print_type_details(t, indent=indent+2)
 
-# Example usage:
-#cpp_decl = "const std::vector<std::map<std::string, MyClass::MySubClass>> func(std::vector<int> a, const std::pair<std::string, double>& b, struct StructA a);"
-#parse_cpp_function_declaration(cpp_decl)
-#cpp_decl2 = "bool operator==(const struct A& lhs, const struct B& rhs);"
-#parse_cpp_function_declaration(cpp_decl2)
+def get_func_info(decl: str):
+    match = re.search(r'(?P<ret>[a-zA-Z_][\w&\*\s<>,:]*\s+[&\*]?)?\s*(?P<func>\w[\w:\-\+=\~]*[&\->\+=\*]?)\s*\((?P<arg>.*)\)([\s\w]+)?$', decl)
+    if not match:
+        sys.exit(f"failed to get function info \"{decl}\" is invalid")
+    result = dict()
+    if match.group('ret'):
+        result['return'] = match.group('ret').strip()
+    result['func'] = match.group('func').strip()
+    if 'return' in result and re.search(r'::operator$', result['return']):
+        result['func'] = result['return'] + " " + result['func']
+        del result['return']
+    if match.group('arg'):
+        args = get_args_list(match.group('arg').strip())
+        args_list = []
+        for a in args:
+            amatch = re.search(r'(.*)\s+(\w+)$', a)
+            if not amatch:
+                amatch = re.search(r'(.*\s+[&*])\s*(\w+)$', a)
+            args_list.append([amatch.group(1).strip(), amatch.group(2).strip()])
+        result['arg'] = args_list
+    return result

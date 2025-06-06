@@ -1,0 +1,28 @@
+syntax = "proto2";
+
+package xbtracer;
+
+message Arg {
+  required string name = 1;
+  required string type = 2;
+  required uint32 size = 3;
+  required bytes value= 4;
+ }
+
+message Func {
+  required string name = 1;
+  google.protobuf.Timestamp timestamp = 2;
+  enum FuncStatus {
+    FUNC_ENTRY = 0;
+    FUNC_EXIT = 1;
+  }
+  required FuncStatus status = 3;
+  required Pid = 4
+  repeated Arg arg = 5;
+}
+
+
+message XrtExportApiCapture {
+  required uint32 version = 1;
+  repeated Func func = 2;
+}

@@ -6,6 +6,9 @@
 
 #include <cstdint>
 #include <cstring>
+#include <iostream>
+#include <typeinfo>
+#include "common/trace_logger.h"
 
 int
 setenv_os(const char* name, const char* val);

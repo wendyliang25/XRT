@@ -1,5 +1,4 @@
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (C) 2019-2021 Xilinx, Inc. All rights reserved.
 # Copyright (C) 2025 Advanced Micro Devices, Inc. All rights reserved.
 
 include (${XRT_SOURCE_DIR}/CMake/protobufUtil.cmake)
@@ -22,3 +21,11 @@ add_dependencies(xbtracer_protobuf xbtracer_generated_code)
 if (MSVC)
   target_compile_options(xbtracer_protobuf PRIVATE /wd4244 /wd4267)
 endif(MSVC)
+
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src")
+
+file(GLOB XBTRACER_COMMON_SRC_FILES
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/common/*.cpp"
+)
+
+add_library(xbtracer_common STATIC ${XBTRACER_COMMON_SRC_FILES})

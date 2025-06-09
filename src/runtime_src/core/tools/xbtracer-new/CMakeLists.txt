@@ -29,3 +29,12 @@ file(GLOB XBTRACER_COMMON_SRC_FILES
 )
 
 add_library(xbtracer_common STATIC ${XBTRACER_COMMON_SRC_FILES})
+
+file(GLOB XBTRACER_WRAPPER_SRC_FILES
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/wrapper/*.cpp"
+)
+
+add_library(xrt_wrapper SHARED ${XBTRACER_WRAPPER_SRC_FILES} ${ProtoHeaders})
+
+target_link_libraries(xrt_wrapper PRIVATE xbtracer_common xbtracer_protobuf ${Protobuf_LIBRARIES})
+add_dependencies(xrt_wrapper xbtracer_common xbtracer_protobuf)

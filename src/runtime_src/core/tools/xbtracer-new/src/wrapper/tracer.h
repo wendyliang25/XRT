@@ -8,6 +8,12 @@
 #include <iostream>
 #include <mutex>
 
+#ifdef _WIN32
+#define WRAPPER_LIB "xrt_wrapper.dll"
+#else
+#define WRAPPER_LIB "libxrt_wrapper.so"
+#endif
+
 extern "C" const char* func_mangled_map[];
 
 namespace xrt::tools::xbtracer

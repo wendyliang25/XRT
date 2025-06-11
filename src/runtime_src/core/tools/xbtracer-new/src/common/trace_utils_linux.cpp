@@ -35,4 +35,13 @@ getenv_os(const char* name, char* buf, uint32_t len)
   return env_len;
 }
 
+int
+localtime_os(std::tm& tm, const std::time_t& t)
+{
+  if (!localtime_r(&t, &tm))
+  {
+    return -EINVAL;
+  }
+  return 0;
+}
 #endif // __linux__

@@ -10,6 +10,9 @@
 #include <iostream>
 #include <typeinfo>
 #include "common/trace_logger.h"
+#ifdef _WIN32
+#include "common/trace_utils_win.h"
+#endif
 
 #ifdef _WIN32
 #define XBRACER_XRT_COREUTIL_LIB "xrt_coreutil.dll"

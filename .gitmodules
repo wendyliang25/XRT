@@ -15,3 +15,7 @@
 	path = src/runtime_src/aie-rt
 	url = https://github.com/Xilinx/aie-rt.git
 	branch = release/main_aig
+[submodule "src/runtime_src/core/tools/xbtracer-new/Detours"]
+	path = src/runtime_src/core/tools/xbtracer-new/Detours
+	url = https://github.com/microsoft/Detours.git
+	branch = main

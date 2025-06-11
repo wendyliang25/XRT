@@ -30,4 +30,10 @@ getenv_os(const char* name, char *buf, uint32_t len)
   return static_cast<int>(rlen & 0xFFFFFFFFU);
 }
 
+int
+localtime_os(std::tm& tm, const std::time_t& t)
+{
+  return static_cast<int>(localtime_s(&tm, &t));
+}
+
 #endif // _WIN32

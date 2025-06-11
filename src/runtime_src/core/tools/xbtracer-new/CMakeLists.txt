@@ -19,3 +19,6 @@ add_custom_target(xbtracer_generated_code DEPENDS ${ProtoSources} ${ProtoHeaders
 
 add_library(xbtracer_protobuf STATIC ${ProtoSources} ${ProtoHeaders})
 add_dependencies(xbtracer_protobuf xbtracer_generated_code)
+if (MSVC)
+  target_compile_options(xbtracer_protobuf PRIVATE /wd4244 /wd4267)
+endif(MSVC)

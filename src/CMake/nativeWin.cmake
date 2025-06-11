@@ -27,6 +27,9 @@ include(CMake/components.cmake)
 set(ENV{XRT_BOOST_INSTALL} "${BOOST_ROOT}")
 include (CMake/boostUtil.cmake)
 
+set(ENV{XRT_PROTOBUF_INSTALL} "${PROTOBUF_ROOT}")
+include (CMake/protobufUtil.cmake)
+
 include_directories(${Boost_INCLUDE_DIRS})
 add_compile_definitions("BOOST_LOCALE_HIDE_AUTO_PTR")
 add_compile_definitions("BOOST_BIND_GLOBAL_PLACEHOLDERS")

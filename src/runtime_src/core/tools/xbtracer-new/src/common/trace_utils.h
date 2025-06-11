@@ -10,6 +10,9 @@
 #include <iostream>
 #include <typeinfo>
 #include "common/trace_logger.h"
+#ifdef _WIN32
+#include "common/trace_utils_win.h"
+#endif
 
 int
 setenv_os(const char* name, const char* val);

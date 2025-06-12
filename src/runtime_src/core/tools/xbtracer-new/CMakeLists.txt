@@ -47,3 +47,15 @@ add_executable(xbtracer ${XBTRACER_CAPTURE_SRC_FILES})
 
 target_link_libraries(xbtracer PRIVATE xbtracer_common)
 add_dependencies(xbtracer xbtracer_common)
+
+if (WIN32)
+include (detoursUtil.cmake)
+
+target_include_directories(xrt_wrapper PRIVATE ${DETOURS_INCLUDE})
+target_link_libraries(xrt_wrapper PRIVATE ms_detours)
+add_dependencies(xrt_wrapper ms_detours)
+target_include_directories(xbtracer PRIVATE ${DETOURS_INCLUDE})
+target_link_libraries(xbtracer PRIVATE ms_detours)
+add_dependencies(xbtracer ms_detours)
+endif(WIN32)
+

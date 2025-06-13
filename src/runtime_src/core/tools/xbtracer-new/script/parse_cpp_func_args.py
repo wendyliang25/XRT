@@ -273,7 +273,9 @@ def print_type_details(type_info: dict, indent=0):
             print_type_details(t, indent=indent+2)
 
 def get_func_info(decl: str):
-    match = re.search(r'(?P<ret>[a-zA-Z_][\w&\*\s<>,:]*\s+[&\*]?)?\s*(?P<func>\w[\w:\-\+=\~]*[&\->\+=\*]?)\s*\((?P<arg>.*)\)([\s\w]+)?$', decl)
+    match = re.search(r'(?P<ret>[a-zA-Z_][\w&\*\s<>,:]*\s+[&\*]?)?\s*(?P<func>\w[\w:]+operator\s+[\w:*&]+)\s*\((?P<arg>.*)\)(?P<props>[\s\w]+)?$', decl)
+    if not match:
+        match = re.search(r'(?P<ret>[a-zA-Z_][\w&\*\s<>,:]*\s+[&\*]?)?\s*(?P<func>\w[\w:\-\+=\~]*[&\->\+=\*]?)\s*\((?P<arg>.*)\)(?P<props>[\s\w]+)?$', decl)
     if not match:
         sys.exit(f"failed to get function info \"{decl}\" is invalid")
     result = dict()
@@ -292,4 +294,6 @@ def get_func_info(decl: str):
                 amatch = re.search(r'(.*\s+[&*])\s*(\w+)$', a)
             args_list.append([amatch.group(1).strip(), amatch.group(2).strip()])
         result['arg'] = args_list
+    if match.group('props'):
+        result['props'] = match.group('props')
     return result

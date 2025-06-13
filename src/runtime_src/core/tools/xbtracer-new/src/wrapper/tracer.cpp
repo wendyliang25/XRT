@@ -10,8 +10,11 @@
 #include <iostream>
 #include <memory>
 #include <mutex>
-#include <common/trace_utils.h>
+#include <version.h>
+#include "func.pb.h"
+
 #include <wrapper/tracer.h>
+#include <common/trace_utils.h>
 
 namespace xrt::tools::xbtracer
 {
@@ -66,10 +69,19 @@ namespace xrt::tools::xbtracer
       {
         opath = odir;
       }
-      opath.append(std::string("trace_protobuf.bin"));
+      auto pid = getpid_current_os();
+      opath.append(std::string("trace_protobuf" + std::to_string(pid) + ".bin"));
       // convert path to string first before converting it to c string to
       // make it work for both Linux and Windows.
       instance = std::unique_ptr<tracer>(new tracer(opath.string(), l));
+
+      // Log XRT version
+      GOOGLE_PROTOBUF_VERIFY_VERSION;
+      xbtracer_proto::XrtExportApiCapture msg;
+      msg.set_version(XRT_DRIVER_VERSION);
+      if (!instance->write_protobuf_msg(msg)) {
+        xbtracer_pcritical("get tracer instance failed, failed to log version information.");
+      }
     });
     return instance.get();
   }

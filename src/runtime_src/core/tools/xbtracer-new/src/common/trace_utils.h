@@ -23,4 +23,6 @@ getenv_os(const char* name, char* buf, uint32_t len);
 int
 localtime_os(std::tm& tm, const std::time_t& t);
 
+uint32_t
+getpid_current_os(void);
 #endif // trace_utils_h

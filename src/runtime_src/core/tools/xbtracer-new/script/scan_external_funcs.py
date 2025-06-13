@@ -49,26 +49,30 @@ ualias_template_pattern = re.compile(r'\s*template[<\s].*\s*using\s+(?P<name>[\w
 enum_pattern = re.compile(r'\s*enum\s+(class\s+)?(?P<name>[\w_]+)\s*(?::\s*[\w_\s]+)?\s*{')
 struct_pattern = re.compile(r'\s*struct\s+(?P<name>[\w_]+)\s*{')
 
-def types_map_add(new_type, old_types=None, container_pipe=[]):
+def types_map_add(new_type, attr, old_types=None, container_pipe=[]):
     if old_types:
         type_maps = old_types
     else:
-        type_maps = set()
-    type_add = "::".join(container_pipe) + "::" + new_type
-    type_maps.add(re.sub(r"^::", "", type_add))
+        type_maps = dict()
+    type_add = "::".join(container_pipe)
+    if type_add == "":
+        type_add = new_type
+    else:
+        type_add = type_add + "::" + new_type
+    type_maps[type_add] = attr
     return type_maps
 
 def types_get_path(type_name, types_map, class_type):
-    if not class_type:
+    if not class_type or class_type == "":
         return type_name
-    cpipe = class_type.split("::")
-    while cpipe:
-        tpipe = "::".join(cpipe) + "::" + type_name
-        # in case cpipe is empty string
-        tpipe = re.sub(r"^::", "", tpipe)
-        if tpipe in types_map:
-            return tpipe
-        cpipe.pop()
+    class_pipe = class_type.split("::")
+    while class_pipe:
+        class_pipe.append(type_name)
+        type_str = "::".join(class_pipe)
+        if type_str in types_map:
+            return type_str
+        class_pipe.pop()
+        class_pipe.pop()
     return type_name
 
 def extract_functions_from_file(file, is_header=False, old_types=None):
@@ -101,7 +105,7 @@ def extract_functions_from_file(file, is_header=False, old_types=None):
         last_match = None
         types_container_pipe = []
         for ns_match in ns_matches:
-            #print(f"add namespace: {ns_match.group(1)}")
+            #print(f"add namespace: {ns_match.group(1)}, class: {scope_stack}")
             scope_stack.append(ns_match.group(1))
             brackets_scope_stack.append(f"namespace,{ns_match.group(1)}")
             last_match = ns_match
@@ -109,10 +113,17 @@ def extract_functions_from_file(file, is_header=False, old_types=None):
         if last_match:
             lines_joined = lines_joined[last_match.end():].strip()
 
+        type_match = enum_pattern.search(lines_joined)
+        if type_match:
+            #print(f"enum: {type_match.group('name')}, class: {scope_stack}")
+            types_map = types_map_add(type_match.group('name'), "enum", old_types=types_map, container_pipe=scope_stack)
+            brackets_scope_stack.append(f"other")
+            lines_joined = lines_joined[type_match.end():].strip()
+
         cls_match = class_pattern.search(lines_joined)
         if cls_match:
-            #print(f"add class: {cls_match.group(1)}")
-            types_map = types_map_add(cls_match.group(1), old_types=types_map, container_pipe=scope_stack)
+            #print(f"add class: {cls_match.group(1)}, class: {scope_stack}")
+            types_map = types_map_add(cls_match.group(1), "class", old_types=types_map, container_pipe=scope_stack)
             scope_stack.append(cls_match.group(1))
             brackets_scope_stack.append(f"class,{cls_match.group(1)}")
             types_container_pipe.append(cls_match.group(1))
@@ -122,23 +133,17 @@ def extract_functions_from_file(file, is_header=False, old_types=None):
         type_match = ualias_template_pattern.search(lines_joined)
         if type_match:
             #print(f"template alias: {type_match.group('name')}, class: {scope_stack}")
-            types_map = types_map_add(type_match.group('name'), old_types=types_map, container_pipe=scope_stack)
+            types_map = types_map_add(type_match.group('name'), "alias", old_types=types_map, container_pipe=scope_stack)
             lines_joined = lines_joined[type_match.end():].strip()
         type_match = ualias_pattern.search(lines_joined)
         if type_match:
             #print(f"alias: {type_match.group('name')}, class: {scope_stack}")
-            types_map = types_map_add(type_match.group('name'), old_types=types_map, container_pipe=scope_stack)
-            lines_joined = lines_joined[type_match.end():].strip()
-        type_match = enum_pattern.search(lines_joined)
-        if type_match:
-            #print(f"enum: {type_match.group('name')}, class: {scope_stack}")
-            types_map = types_map_add(type_match.group('name'), old_types=types_map, container_pipe=scope_stack)
-            brackets_scope_stack.append(f"other")
+            types_map = types_map_add(type_match.group('name'), "alias", old_types=types_map, container_pipe=scope_stack)
             lines_joined = lines_joined[type_match.end():].strip()
         type_match = struct_pattern.search(lines_joined)
         if type_match:
             #print(f"struct: {type_match.group('name')}, class: {scope_stack}")
-            types_map = types_map_add(type_match.group('name'), old_types=types_map, container_pipe=scope_stack)
+            types_map = types_map_add(type_match.group('name'), "struct", old_types=types_map, container_pipe=scope_stack)
             brackets_scope_stack.append(f"other")
             lines_joined = lines_joined[type_match.end():].strip()
 
@@ -190,7 +195,7 @@ def extract_functions_from_file(file, is_header=False, old_types=None):
             brackets_scope_stack.append(f"other")
         right_braceket_matches = [m.group() for m in re.finditer(r'}', lines_joined)]
         for m in right_braceket_matches:
-            #print(f"pop brackets stack: {lines_joined}")
+            #print(f"pop brackets stack: backets: {brackets_scope_stack[-1]} {lines_joined}")
             if not brackets_scope_stack:
                 sys.exit(f"ERROR: Unexpected bracket in line {index}, {line}")
             current_brackets_scope = brackets_scope_stack.pop()
@@ -199,7 +204,7 @@ def extract_functions_from_file(file, is_header=False, old_types=None):
                 current_scope = scope_stack.pop()
                 #print(f"pop {current_brackets_scope}, {current_scope}")
                 if current_scope != current_brackets_scope.split(",")[1]:
-                    sys.exit(f"Unmatched class/namespace scopes: {current_brackets_scropt}, {current_scope}")
+                    sys.exit(f"Unmatched class/namespace scopes: {current_brackets_scope}, {current_scope}")
         left_braceket_end = 0
         if left_braceket_matches:
             left_braceket_end = list(re.finditer(r'{', lines_joined))[-1].end()
@@ -283,16 +288,18 @@ def main():
     parser.add_argument('--gen_wrapper', help='Generate wrapper library implementation', action="store_true", default=False)
     parser.add_argument('--xrt_src', help='XRT source root, which is used to locate xrt header. Required for --gen_func_lookup.', default=None)
     parser.add_argument('--bld_dir', help='Build directort, required for generating mangled functions lookup table.', default=None)
+    parser.add_argument('--gen_hook', help='Generate hooking functions. Generated functions will be stored in the specified directory', default=None)
     args = parser.parse_args()
 
     header_files = get_header_files(args.header_dir)
+    #header_files = ["/proj/xsjhdstaff5/wendlian/XRT/src/runtime_src/core/include/xrt/experimental/xrt_xclbin.h"]
     if args.cpp_dir:
       cpp_files = get_cpp_files(args.cpp_dir)
     else:
       cpp_files = None
 
     header_funcs = set()
-    types_map = ()
+    types_map = dict()
     for h in header_files:
         funcs, types_map = extract_functions_from_file(file=h, is_header=True, old_types=types_map)
         header_funcs.update(funcs)
@@ -345,6 +352,10 @@ def main():
         out_f = args.bld_dir + "/funcs_mangled_lookup.cpp"
         mangled_names_f = cpp_mangled_name_parser.gen_mangled_funcs_names(funcs=adjust_funcs_h, xrt_src_root=args.xrt_src,
             script_dir=script_dir, build_dir=args.bld_dir, out_cpp=out_f)
+
+    if args.gen_hook:
+        print(f"**** Generating hooking functions to \"{args.gen_hook}\" ****")
+        cpp_mangled_name_parser.gen_wrapper_funcs(funcs=adjust_funcs_h, class_dict=types_map, out_cpp_dir=args.gen_hook)
 
 if __name__ == '__main__':
     main()

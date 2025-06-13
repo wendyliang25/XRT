@@ -292,3 +292,183 @@ def compare_lib_mangled_names(mangled_names_file, lib_file):
                 #sys.exit(f"manged name \'{mname}\' not in \'{lib_file}\'")
                 print(f"manged name \'{mname}\' not in \'{lib_file}\'")
     print(f"compare mangled names from \'{mangled_names_file}\' to \'{lib_file}\' done.")
+
+def gen_wrapper_funcs(funcs: set, class_dict: dict, out_cpp_dir: str):
+    os.makedirs(f"{out_cpp_dir}", exist_ok=True)
+    func_info_list = sort_funcs(funcs)
+    class_file_map = dict()
+    class_file_map['xrt'] = "hook_xrt.cpp"
+    class_file_map['xrt::aie'] = "hook_xrt_aie.cpp"
+    class_file_map['xrt::bo'] = "hook_xrt_bo.cpp"
+    class_file_map['xrt::device'] = "hook_xrt_device.cpp"
+    class_file_map['xrt::elf'] = "hook_xrt_elf.cpp"
+    class_file_map['xrt::error'] = "hook_xrt_error.cpp"
+    class_file_map['xrt::ext::bo'] = "hook_xrt_ext_bo.cpp"
+    class_file_map['xrt::ext::kernel'] = "hook_xrt_ext_kernel.cpp"
+    class_file_map['xrt::fence'] = "hook_xrt_fence.cpp"
+    class_file_map['xrt::hw_context'] = "hook_xrt_hw_context.cpp"
+    class_file_map['xrt::ini'] = "hook_xrt_ini.cpp"
+    class_file_map['xrt::ip'] = "hook_xrt_ip.cpp"
+    class_file_map['xrt::kernel'] = "hook_xrt_kernel.cpp"
+    class_file_map['xrt::mailbox'] = "hook_xrt_mailbox.cpp"
+    class_file_map['xrt::module'] = "hook_xrt_module.cpp"
+    class_file_map['xrt::message'] = "hook_xrt_message.cpp"
+    class_file_map['xrt::profile'] = "hook_xrt_profile.cpp"
+    class_file_map['xrt::queue'] = "hook_xrt_queue.cpp"
+    class_file_map['xrt::run'] = "hook_xrt_run.cpp"
+    class_file_map['xrt::runlist'] = "hook_xrt_runlist.cpp"
+    class_file_map['xrt::system'] = "hook_xrt_system.cpp"
+    class_file_map['xrt::version'] = "hook_xrt_version.cpp"
+    class_file_map['xrt::xclbin'] = "hook_xrt_xclbin.cpp"
+    class_file_map['xrt::xclbin_repository'] = "hook_xrt_xclbin.cpp"
+
+    func_file_map = dict()
+    func_file_map["xrt::operator==(const xrt::device&, const xrt::device&)"] = "hook_xrt_device.cpp"
+    func_file_map["xrt::set_read_range(const xrt::kernel&, uint32_t, uint32_t)"] = "hook_xrt_kernel.cpp"
+
+    # get mangled name from generated result
+    if is_windows():
+        mangled_names_file = out_cpp_dir + "/funcs_mangled_lookup_win.cpp"
+    else:
+        mangled_names_file = out_cpp_dir + "/funcs_mangled_lookup_linux.cpp"
+
+    fmangled_map = dict()
+    with open(mangled_names_file, 'r', encoding='utf-8') as mfile:
+        lines = mfile.readlines()
+        for line in lines:
+            if "\", \"" not in line:
+                continue
+            match = re.search(r"\"(.*)\", \"(.*)\",", line)
+            if not match:
+                sys.exit(f"compared mangled name failed, failed to get mangled name from {line}")
+            fsignature = match.group(1)
+            fmname = match.group(2)
+            fmangled_map[fsignature] = fmname
+
+    hook_xrt_h_f = out_cpp_dir + "/hook_xrt.h"
+    xrt_headers = set()
+    xrt_headers.add("chrono")
+    xrt_headers.add("typeinfo")
+    xrt_headers.add("xrt.h")
+    xrt_headers.add("xrt/xrt_bo.h")
+    xrt_headers.add("xrt/xrt_aie.h")
+    xrt_headers.add("xrt/xrt_device.h")
+    xrt_headers.add("xrt/xrt_hw_context.h")
+    xrt_headers.add("xrt/xrt_kernel.h")
+    xrt_headers.add("xrt/xrt_uuid.h")
+    xrt_headers.add("xrt/experimental/xrt_ip.h")
+    xrt_headers.add("xrt/experimental/xrt_mailbox.h")
+    xrt_headers.add("xrt/experimental/xrt_module.h")
+    xrt_headers.add("xrt/experimental/xrt_kernel.h")
+    xrt_headers.add("xrt/experimental/xrt_profile.h")
+    xrt_headers.add("xrt/experimental/xrt_queue.h")
+    xrt_headers.add("xrt/experimental/xrt_error.h")
+    xrt_headers.add("xrt/experimental/xrt_ext.h")
+    xrt_headers.add("xrt/experimental/xrt_ini.h")
+    xrt_headers.add("xrt/experimental/xrt_message.h")
+    xrt_headers.add("xrt/experimental/xrt_system.h")
+    xrt_headers.add("xrt/experimental/xrt_aie.h")
+    xrt_headers.add("xrt/experimental/xrt_version.h")
+    xrt_headers.add("core/common/api/fence_int.h")
+    xrt_headers.add("google/protobuf/timestamp.pb.h")
+    xrt_headers.add("func.pb.h")
+    xrt_headers.add("common/trace_utils.h")
+    with open(hook_xrt_h_f, 'w', newline='\n') as out:
+        for h in xrt_headers:
+            out.write(f"#include <{h}>\n")
+
+    for decl in funcs:
+        func_info = parse_cpp_func_args.get_func_info(decl)
+        if 'return' in func_info:
+            func_ret = func_info['return']
+        else:
+            func_ret = None
+        if 'props' in func_info:
+            func_p = func_info['props']
+        func_s = func_info['func'] + "("
+        if 'arg' in func_info:
+            args_types_list = []
+            for a in func_info['arg']:
+                args_types_list.append(a[0])
+            args_str = ', '.join(args_types_list)
+        else:
+            args_str = "void"
+        func_s = func_s + args_str + ")"
+        func_name = func_info['func']
+        mname = fmangled_map[func_s]
+        if not mname:
+            sys.exit(f"failed to get mangled name for \'{func_s}\'.")
+        func_c_match = re.search(r"([\w:]+)::operator\s+([\w:*&\s]+)$", func_name);
+        if not func_c_match:
+            func_c_match = re.search(r"([\w:]+)::([\w=\*&\-\+<>\s~]+)$", func_name)
+        func_f = None
+        if func_c_match:
+            func_c = func_c_match.group(1)
+            func_n = func_c_match.group(2)
+        else:
+            sys.exit(f"function\'{decl}\', func_name: \'{func_name}\', doesn't have class information.")
+        if func_c_match:
+            func_c_tmp = func_c_match.group(1).split("::")
+            while func_c_tmp:
+                func_c_tmp_str = "::".join(func_c_tmp)
+                if func_c_tmp_str in class_file_map:
+                    func_f = class_file_map[func_c_tmp_str]
+                    break
+                func_c_tmp.pop()
+        if not func_f:
+            if func_s in func_file_map:
+                func_f = func_file_map[func_s]
+        if not func_f:
+            sys.exit(f"failed to get generated cpp file for \'{func_n}\', class: {func_c}.")
+        if not os.path.exists(func_f):
+            with open(func_f, 'w', newline='\n') as out:
+                out.write("#include <wrapper/hook_xrt.h>\n")
+        args_list = []
+        if 'arg' in func_info:
+            for a in func_info['arg']:
+                args_list.append(' '.join(a))
+        args_str = ','.join(args_list)
+        with open(func_f, 'a', newline='\n') as out:
+            print(f"gen hook: \"{func_f}\"")
+            out.write("\n")
+            if func_ret:
+                out.write(f"{func_ret}\n")
+            lines = f"""
+{func_c}::
+{func_n}({args_str})
+{{
+  xbtracer_proto::Func func;
+  func.set_name("{func_s}");
+  auto now = std::chrono::system_clock::now();
+  auto duration = now.time_since_epoch();
+  auto seconds = std::chrono::duration_cast<std::chrono::seconds>(duration);
+  auto micros = std::chrono::duration_cast<std::chrono::microseconds>(duration - seconds);
+
+  google::protobuf::Timestamp* ts = func.mutable_timestamp();
+  ts->set_seconds(seconds.count());
+  ts->set_nanos(micros.count() * 1000); // Convert microseconds to nanoseconds
+
+  uint32_t pid = getpid_current_os();
+  func.set_pid(pid);
+  func.set_status(xbtracer_proto::Func::FuncStatus::FUNC_ENTRY);
+"""
+            out.write(f"{lines}")
+            if func_c in class_dict:
+                # TODO: how about static class function, we need detection in future too
+                if class_dict[func_c] == "class":
+                    # add handle to the arguments
+                    lines = f"""
+  auto this_pimpl = this->get_handle();
+  void* this_pimpl_ptr = this_impl->get();
+  xbtracer_proto::Arg* arg = func.add_arg();
+  arg->set_name("pimpl")
+  arg->set_type("void*")
+  arg->set_size(static_cast<uint32_t>(sizeof(void*) & 0xFFFFFFFFU));
+  arg->set_value(std::string(reinterpret_cast<const char*>(&this_pimpl_ptr), sizeof(this_pimpl_ptr)));
+"""
+                    out.write(f"{lines}")
+            lines = f"""
+  xbtracer_write_protobuf_msg(func);
+"""
+            out.write(f"{lines}")
+            out.write("}\n")

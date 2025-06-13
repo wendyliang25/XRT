@@ -22,7 +22,10 @@ if (MSVC)
   target_compile_options(xbtracer_protobuf PRIVATE /wd4244 /wd4267)
 endif(MSVC)
 
-include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src")
+include_directories(
+  "${CMAKE_CURRENT_SOURCE_DIR}/src"
+  ${XRT_BINARY_DIR}/gen
+)
 
 file(GLOB XBTRACER_COMMON_SRC_FILES
   "${CMAKE_CURRENT_SOURCE_DIR}/src/common/*.cpp"

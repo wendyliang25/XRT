@@ -31,6 +31,9 @@ getenv_os(const char* name, char* buf, uint32_t len);
 int
 localtime_os(std::tm& tm, const std::time_t& t);
 
+uint32_t
+getpid_current_os(void);
+
 size_t
 get_size_of_func_mangled_map(void);
 

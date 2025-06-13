@@ -256,6 +256,7 @@ def gen_mangled_funcs_names(funcs: set, xrt_src_root, script_dir: str, build_dir
           out.write("#ifdef __linux__\n")
         out.write("#include <cstring>\n\n")
         out.write("const char * func_mangled_map[] = {\n")
+        fmangled_map = dict(sorted(fmangled_map.items()))
         for k, m in fmangled_map.items():
             out.write(f"\t\"{k}\", \"{m}\",\n")
         out.write("};\n")
@@ -267,7 +268,7 @@ def get_lib_exports_linux(lib_file):
     return lib_exports.stdout
     
 
-def compare_lib_exports_win(mangled_names_file, lib_file):
+def get_lib_exports_win(lib_file):
     lib_exports = subprocess.run(
         ["dumpbin", "/EXPORTS", lib_file], capture_output=True, text=True, check=True)
     return lib_exports.stdout

@@ -7,6 +7,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <stdlib.h>
+#include <unistd.h>
 #include <common/trace_utils.h>
 
 int
@@ -44,4 +45,13 @@ localtime_os(std::tm& tm, const std::time_t& t)
   }
   return 0;
 }
+
+uint32_t
+getpid_current_os(void)
+{
+  pid_t pid = getpid();
+
+  return (uint32_t)(pid & 0xFFFFFFFFU);
+}
+
 #endif // __linux__

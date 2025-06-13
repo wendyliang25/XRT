@@ -38,6 +38,13 @@ localtime_os(std::tm& tm, const std::time_t& t)
   return static_cast<int>(localtime_s(&tm, &t));
 }
 
+uint32_t
+getpid_current_os(void)
+{
+    DWORD pid = GetCurrentProcessId();
+    return static_cast<uint32_t>(pid & 0xFFFFFFFFU);
+}
+
 int
 inject_library(HANDLE hprocess, const char* lib_path)
 {

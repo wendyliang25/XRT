@@ -70,6 +70,17 @@ def get_class_header(decl: str):
         headers.add("core/common/api/fence_int.h")
     return list(headers)
 
+def mem_init_construct(decl: str):
+    if re.search(r"aie_error::aie_error\(", decl):
+        full_args_list = re.search(r"\((.*)\)", decl).group(1).split(',')
+        args_list = []
+        for a in full_args_list:
+            aname = re.search(r"\s[\*&]*(\w+)$", a).group(1)
+            args_list.append(aname)
+            args_str = ','.join(args_list)
+        return f": command_error({args_str})"
+    return None
+
 def gen_decl_cpp(decl: str, cpp_file: str):
     print(f"generate cpp for {decl} to file {cpp_file}")
     sfunc_return = dict()
@@ -79,13 +90,16 @@ def gen_decl_cpp(decl: str, cpp_file: str):
     sfunc_return[r'xrt::bo::async_handle\s*&*\s*[\w+:&+->]+\s*\(.*\)'] = "throw std::runtime_error(\"unsupported\");"
     sfunc_return[r'xrt::ip::interrupt\s*&*\s*[\w+:&+->]+\s*\(.*\)'] = "throw std::runtime_error(\"unsupported\");"
     with open(cpp_file, 'w') as cpp:
+        cpp.write("#include <stdexcept>\n")
         headers = get_class_header(decl)
         for h in headers:
-            cpp.write("#include <stdexcept>\n")
             cpp.write(f"#include \"{h}\"\n")
             if "boost::any" in decl:
                 cpp.write("#include <boost/any.hpp>\n")
         cpp.write(f"\n{decl}\n")
+        mem_init = mem_init_construct(decl)
+        if mem_init:
+            cpp.write(f"{mem_init}")
         match = re.search(r'(.*[\w>&*]\s+)?\s*[\s\w:]+operator[\s\w&*=+->]+\s*\(.*\)(\s*[\w\s]+)?$', decl)
         if not match:
             match = re.search(r'(.*[\w>&*]\s+)?\s*[~\w:]+\(.*\)(\s*[\w\s]+)?$', decl)

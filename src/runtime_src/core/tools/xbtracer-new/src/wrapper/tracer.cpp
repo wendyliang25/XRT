@@ -24,14 +24,30 @@ namespace xrt::tools::xbtracer
     {
       throw std::runtime_error("xbtracer failed to open output file: \"" + std::string(outf) + "\".");
     }
+    coreutil_lib_h = load_library_os(XBRACER_XRT_COREUTIL_LIB);
+    if (!coreutil_lib_h)
+    {
+      throw std::runtime_error("xbrtracer failer to open lib: \"" +
+                               std::string(XBRACER_XRT_COREUTIL_LIB) + "\".");
+    }
   }
 
   tracer::~tracer()
   {
+    if (coreutil_lib_h)
+    {
+      close_library_os(coreutil_lib_h);
+    }
     if (tracer_ofile.is_open())
     {
       tracer_ofile.close();
     }
+  }
+
+  proc_addr_type
+  tracer::get_proc_addr(const char* symbol)
+  {
+    return get_proc_addr_os(coreutil_lib_h, symbol);
   }
 
   tracer*
@@ -77,3 +93,11 @@ namespace xrt::tools::xbtracer
 
 std::unique_ptr<xrt::tools::xbtracer::tracer> xrt::tools::xbtracer::tracer::instance = nullptr;
 std::once_flag xrt::tools::xbtracer::tracer::init_instance_flag;
+
+
+void*
+xbtracer_get_original_func_addr(const char*symbol)
+{
+  xrt::tools::xbtracer::tracer* tracer = xrt::tools::xbtracer::tracer::get_instance();
+  return tracer->get_proc_addr(symbol);
+}

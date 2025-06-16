@@ -8,6 +8,8 @@
 #include <iostream>
 #include <mutex>
 
+#include <common/trace_utils.h>
+
 extern "C" const char* func_mangled_map[];
 
 namespace xrt::tools::xbtracer
@@ -31,6 +33,9 @@ public:
 
   ~tracer();
 
+  proc_addr_type
+  get_proc_addr(const char* symbol);
+
   template <typename protobuf_msg>
   bool
   write_protobuf_msg(const protobuf_msg& msg)
@@ -47,6 +52,7 @@ private:
   static std::once_flag init_instance_flag;
   std::fstream tracer_ofile;
   level tlevel;
+  lib_handle_type coreutil_lib_h;
 }; // class xrt::tools::xbracer::tracer
 
 } // namespace xrt::tools::xbtracer
@@ -58,4 +64,6 @@ xbtracer_write_protobuf_msg(const protobuf_msg& msg)
   return xrt::tools::xbtracer::tracer::get_instance()->write_protobuf_msg(msg);
 }
 
+void*
+xbtracer_get_original_func_addr(const char* symbol);
 #endif // tracer_h

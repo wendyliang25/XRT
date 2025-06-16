@@ -101,4 +101,33 @@ inject_library(HANDLE hprocess, const char* lib_path)
   return 0;
 }
 
+lib_handle_type
+load_library_os(const char* path)
+{
+  return LoadLibraryA(path);
+}
+
+void
+close_library_os(lib_handle_type handle)
+{
+  if (handle)
+  {
+    FreeLibrary(handle);
+  }
+}
+
+proc_addr_type
+get_proc_addr_os(lib_handle_type handle, const char* symbol)
+{
+  HMODULE hmodule = static_cast<HMODULE>(handle);
+  FARPROC paddr = GetProcAddress(hmodule, symbol);
+
+  if (!paddr)
+  {
+    xbtracer_perror("failed to get address of symbol \"", symbol, "\".");
+    return nullptr;
+  }
+  return paddr;
+}
+
 #endif // _WIN32

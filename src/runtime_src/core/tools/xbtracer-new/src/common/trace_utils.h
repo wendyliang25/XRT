@@ -16,8 +16,12 @@
 
 #ifdef _WIN32
 #define XBRACER_XRT_COREUTIL_LIB "xrt_coreutil.dll"
+typedef HMODULE lib_handle_type;
+typedef FARPROC proc_addr_type;
 #else
 #define XBRACER_XRT_COREUTIL_LIB "libxrt_coreutil.so.2"
+typedef void* lib_handle_type;
+typedef void* proc_addr_type;
 #endif
 
 extern "C" const char* func_mangled_map[];
@@ -33,6 +37,15 @@ localtime_os(std::tm& tm, const std::time_t& t);
 
 uint32_t
 getpid_current_os(void);
+
+lib_handle_type
+load_library_os(const char* path);
+
+void
+close_library_os(lib_handle_type handle);
+
+proc_addr_type
+get_proc_addr_os(lib_handle_type handle, const char* symbol);
 
 size_t
 get_size_of_func_mangled_map(void);

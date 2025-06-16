@@ -260,7 +260,14 @@ def gen_mangled_funcs_names(funcs: set, xrt_src_root, script_dir: str, build_dir
         for k, m in fmangled_map.items():
             out.write(f"\t\"{k}\", \"{m}\",\n")
         out.write("};\n")
-        out.write("#endif\n")
+        lines = """
+size_t get_size_of_func_mangled_map(void)
+{
+  return sizeof(func_mangled_map)/sizeof(func_mangled_map[0]);
+}
+#endif
+"""
+        out.write(lines)
 
 def get_lib_exports_linux(lib_file):
     lib_exports = subprocess.run(
@@ -500,9 +507,13 @@ def gen_wrapper_funcs(funcs: set, class_dict: dict, out_cpp_dir: str):
                 ofunc_args_str = f"this, {args_name_str}"
             else:
                 ofunc_args_str = f"{args_name_str}"
-            if func_type_ret and not re.search(r"void", func_type_ret):
+            if func_type_ret and not is_constructor and not re.search(r"void", func_type_ret):
                 lines = lines + f"""
   {func_type_ret} ret_o = ofunc({ofunc_args_str});
+"""
+            else:
+                lines = lines + f"""
+ofunc({ofunc_args_str});
 """
             if is_class_member:
                 lines = lines + f"""

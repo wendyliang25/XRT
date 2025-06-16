@@ -15,8 +15,6 @@
 #include <func.pb.h>
 #include <common/trace_utils.h>
 
-extern "C" const char* func_mangled_map[];
-
 namespace xrt::tools::xbtracer
 {
 

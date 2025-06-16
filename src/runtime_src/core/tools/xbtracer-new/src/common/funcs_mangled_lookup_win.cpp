@@ -255,4 +255,10 @@ const char * func_mangled_map[] = {
 	"xrt::xclbin_repository::xclbin_repository(const std::string&)", "??0xclbin_repository@xrt@@QEAA@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z",
 	"xrt::xclbin_repository::xclbin_repository(void)", "??0xclbin_repository@xrt@@QEAA@XZ",
 };
+
+size_t
+get_size_of_func_mangled_map(void)
+{
+  return sizeof(func_mangled_map)/sizeof(func_mangled_map[0]);
+}
 #endif

@@ -10,10 +10,18 @@
 #include <typeinfo>
 #include "common/trace_logger.h"
 
+extern "C" const char* func_mangled_map[];
+
 int
 setenv_os(const char* name, const char* val);
 
 int
 getenv_os(const char* name, char* buf, uint32_t len);
+
+size_t
+get_size_of_func_mangled_map(void);
+
+const char*
+get_func_mname_from_signature(const char* s);
 
 #endif // trace_utils_h

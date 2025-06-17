@@ -74,6 +74,12 @@ int launch_app(const struct tracer_arg &args)
   pid_t pid = fork();
   if (pid == 0)
   {
+    const char* preload = getenv("LD_PRELOAD");
+    if (!preload)
+    {
+      xbtracer_pcritical("no LD_PRELOAD is set in child process.");
+    }
+    xbtracer_pdebug("LD_PRELOAD in child process is set to: \"", std::string(preload), "\".");
     // child process to launch the target application
     std::vector<char *> c_args;
     c_args.reserve(args.target_app.size() + 1);

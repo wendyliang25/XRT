@@ -11,6 +11,12 @@
 #include <typeinfo>
 #include "common/trace_logger.h"
 
+#ifdef _WIN32
+#define XBRACER_XRT_COREUTIL_LIB "xrt_coreutil.dll"
+#else
+#define XBRACER_XRT_COREUTIL_LIB "libxrt_coreutil.so.2"
+#endif
+
 extern "C" const char* func_mangled_map[];
 
 int

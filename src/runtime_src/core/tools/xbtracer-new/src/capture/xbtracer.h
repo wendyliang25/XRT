@@ -6,6 +6,12 @@
 #include <string>
 #include <vector>
 
+#ifdef _WIN32
+#define WRAPPER_LIB "xrt_wrapper.dll"
+#else
+#define WRAPPER_LIB "libxrt_wrapper.so"
+#endif
+
 namespace xrt::tools::xbtracer {
 struct tracer_arg {
   bool verbose;

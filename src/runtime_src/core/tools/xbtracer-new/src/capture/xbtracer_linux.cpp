@@ -16,7 +16,6 @@
 #include <vector>
 #include <capture/xbtracer.h>
 #include <common/trace_utils.h>
-#include <wrapper/tracer.h>
 
 namespace xrt::tools::xbtracer
 {

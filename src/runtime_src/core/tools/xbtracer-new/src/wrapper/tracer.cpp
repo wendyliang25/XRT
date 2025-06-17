@@ -20,7 +20,7 @@ namespace xrt::tools::xbtracer
 	 tracer_ofile(outf, std::ios::out | std::ios::binary | std::ios::trunc),
          tlevel(tl)
   {
-    if (!tracer_ofile)
+    if (!tracer_ofile || !tracer_ofile.is_open())
     {
       throw std::runtime_error("xbtracer failed to open output file: \"" + std::string(outf) + "\".");
     }
@@ -48,6 +48,39 @@ namespace xrt::tools::xbtracer
   tracer::get_proc_addr(const char* symbol)
   {
     return get_proc_addr_os(coreutil_lib_h, symbol);
+  }
+
+  bool
+  tracer::trace_pid(uint32_t pid)
+  {
+    std::lock_guard<std::mutex> lock(pids_mlock);
+    trace_pids.push_back(pid);
+    return true;
+  }
+
+  bool
+  tracer::remove_trace_pid(uint32_t pid)
+  {
+    std::lock_guard<std::mutex> lock(pids_mlock);
+    auto is_matched = [pid](uint32_t _pid) { return pid == _pid; };
+    auto it = std::remove_if(trace_pids.begin(), trace_pids.end(), is_matched);
+    if (it != trace_pids.end()) {
+      trace_pids.erase(it, trace_pids.end());
+      return true;
+    }
+    return false;
+  }
+
+  bool
+  tracer::is_pid_traced(uint32_t pid)
+  {
+    std::lock_guard<std::mutex> lock(pids_mlock);
+    auto is_matched = [pid](uint32_t _pid) { return pid == _pid; };
+    auto it = std::remove_if(trace_pids.begin(), trace_pids.end(), is_matched);
+    if (it != trace_pids.end()) {
+      return true;
+    }
+    return false;
   }
 
   tracer*
@@ -94,10 +127,33 @@ namespace xrt::tools::xbtracer
 std::unique_ptr<xrt::tools::xbtracer::tracer> xrt::tools::xbtracer::tracer::instance = nullptr;
 std::once_flag xrt::tools::xbtracer::tracer::init_instance_flag;
 
-
 void*
 xbtracer_get_original_func_addr(const char*symbol)
 {
   xrt::tools::xbtracer::tracer* tracer = xrt::tools::xbtracer::tracer::get_instance();
   return tracer->get_proc_addr(symbol);
+}
+
+bool
+xbtracer_needs_trace_func(void)
+{
+  uint32_t pid = getpid_current_os();
+  xrt::tools::xbtracer::tracer* tracer = xrt::tools::xbtracer::tracer::get_instance();
+  return !tracer->is_pid_traced(pid);
+}
+
+bool
+xbtrace_trace_current_func(void)
+{
+  uint32_t pid = getpid_current_os();
+  xrt::tools::xbtracer::tracer* tracer = xrt::tools::xbtracer::tracer::get_instance();
+  return tracer->trace_pid(pid);
+}
+
+void
+xbtrace_untrace_current_func(void)
+{
+  uint32_t pid = getpid_current_os();
+  xrt::tools::xbtracer::tracer* tracer = xrt::tools::xbtracer::tracer::get_instance();
+  tracer->remove_trace_pid(pid);
 }

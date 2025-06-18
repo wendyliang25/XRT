@@ -123,7 +123,9 @@ xbrtracer_init_func_proto_msg(PFUNC& func_msg, const char* func_name, PFUNC_TRAC
 
   google::protobuf::Timestamp* ts = func_msg.mutable_timestamp();
   ts->set_seconds(seconds.count());
-  ts->set_nanos(micros.count() * 1000); // Convert microseconds to nanoseconds
+  // Convert microseconds to nanoseconds
+  // set_nanos() input is INT32
+  ts->set_nanos((micros.count() * 1000) & 0xFFFFFFFFU); // Convert microseconds to nanoseconds
 
   uint32_t pid = getpid_current_os();
   func_msg.set_pid(pid);

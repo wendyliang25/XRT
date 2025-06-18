@@ -289,6 +289,7 @@ def main():
     parser.add_argument('--xrt_src', help='XRT source root, which is used to locate xrt header. Required for --gen_func_lookup.', default=None)
     parser.add_argument('--bld_dir', help='Build directort, required for generating mangled functions lookup table.', default=None)
     parser.add_argument('--gen_hook', help='Generate hooking functions. Generated functions will be stored in the specified directory', default=None)
+    parser.add_argument('--func_mangled_map', help="specified the function mangled name mapping, only used with --gen-hook", default=None)
     args = parser.parse_args()
 
     header_files = get_header_files(args.header_dir)
@@ -355,7 +356,9 @@ def main():
 
     if args.gen_hook:
         print(f"**** Generating hooking functions to \"{args.gen_hook}\" ****")
-        cpp_mangled_name_parser.gen_wrapper_funcs(funcs=adjust_funcs_h, class_dict=types_map, out_cpp_dir=args.gen_hook)
+        if not args.func_mangled_map:
+            sys.exit("not functions mangled name mapping is specified. please use --func_mangled_map to specify the mapping file.")
+        cpp_mangled_name_parser.gen_wrapper_funcs(funcs=adjust_funcs_h, class_dict=types_map, out_cpp_dir=args.gen_hook, func_mangled_map_f=args.func_mangled_map)
 
 if __name__ == '__main__':
     main()

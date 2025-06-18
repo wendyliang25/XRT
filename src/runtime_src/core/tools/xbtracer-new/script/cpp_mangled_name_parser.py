@@ -249,27 +249,29 @@ def gen_mangled_funcs_names(funcs: set, xrt_src_root, script_dir: str, build_dir
 
     print(f"wrting function name to mangled name mapping to \'{out_cpp}\'.")
     # output the demangled name and the mangled name to a cpp array
-    with open(out_cpp, 'w') as out:
+    with open(out_cpp, 'w', newline='\n') as out:
         lines = ""
         if is_windows():
-          lines = lines + "#ifdef _WIN32\n"
+          lines = lines + "#ifdef _WIN32"
         else:
-          lines = lines + "#ifdef __linux__\n"
+          lines = lines + "#ifdef __linux__"
         lines = lines + """
 #include <cstring>
 
-extern "C" const char * func_mangled_map[] = {
+extern "C" {
+const char * func_mangled_map[] = {
 """
         fmangled_map = dict(sorted(fmangled_map.items()))
         for k, m in fmangled_map.items():
-            lines = lines + f"\t\"{k}\", \"{m}\",\n"
-        lines = lines + f"""
-};
+            lines = lines + f"  \"{k}\", \"{m}\",\n"
+        lines = lines + f"""}};
+}};
 
-size_t get_size_of_func_mangled_map(void)
-{
+size_t
+get_size_of_func_mangled_map(void)
+{{
   return sizeof(func_mangled_map)/sizeof(func_mangled_map[0]);
-}
+}}
 #endif
 """
         out.write(lines)
@@ -305,7 +307,7 @@ def compare_lib_mangled_names(mangled_names_file, lib_file):
                 print(f"manged name \'{mname}\' not in \'{lib_file}\'")
     print(f"compare mangled names from \'{mangled_names_file}\' to \'{lib_file}\' done.")
 
-def gen_wrapper_funcs(funcs: set, class_dict: dict, out_cpp_dir: str):
+def gen_wrapper_funcs(funcs: set, class_dict: dict, out_cpp_dir: str, func_mangled_map_f):
     os.makedirs(f"{out_cpp_dir}", exist_ok=True)
     func_info_list = sort_funcs(funcs)
     class_file_map = dict()
@@ -339,10 +341,7 @@ def gen_wrapper_funcs(funcs: set, class_dict: dict, out_cpp_dir: str):
     func_file_map["xrt::set_read_range(const xrt::kernel&, uint32_t, uint32_t)"] = "hook_xrt_kernel.cpp"
 
     # get mangled name from generated result
-    if is_windows():
-        mangled_names_file = out_cpp_dir + "/funcs_mangled_lookup_win.cpp"
-    else:
-        mangled_names_file = out_cpp_dir + "/funcs_mangled_lookup_linux.cpp"
+    mangled_names_file = func_mangled_map_f
 
     fmangled_map = dict()
     with open(mangled_names_file, 'r', encoding='utf-8') as mfile:
@@ -358,33 +357,33 @@ def gen_wrapper_funcs(funcs: set, class_dict: dict, out_cpp_dir: str):
             fmangled_map[fsignature] = fmname
 
     hook_xrt_h_f = out_cpp_dir + "/hook_xrt.h"
-    xrt_headers = set()
-    xrt_headers.add("chrono")
-    xrt_headers.add("typeinfo")
-    xrt_headers.add("xrt.h")
-    xrt_headers.add("xrt/xrt_bo.h")
-    xrt_headers.add("xrt/xrt_aie.h")
-    xrt_headers.add("xrt/xrt_device.h")
-    xrt_headers.add("xrt/xrt_hw_context.h")
-    xrt_headers.add("xrt/xrt_kernel.h")
-    xrt_headers.add("xrt/xrt_uuid.h")
-    xrt_headers.add("xrt/experimental/xrt_ip.h")
-    xrt_headers.add("xrt/experimental/xrt_mailbox.h")
-    xrt_headers.add("xrt/experimental/xrt_module.h")
-    xrt_headers.add("xrt/experimental/xrt_kernel.h")
-    xrt_headers.add("xrt/experimental/xrt_profile.h")
-    xrt_headers.add("xrt/experimental/xrt_queue.h")
-    xrt_headers.add("xrt/experimental/xrt_error.h")
-    xrt_headers.add("xrt/experimental/xrt_ext.h")
-    xrt_headers.add("xrt/experimental/xrt_ini.h")
-    xrt_headers.add("xrt/experimental/xrt_message.h")
-    xrt_headers.add("xrt/experimental/xrt_system.h")
-    xrt_headers.add("xrt/experimental/xrt_aie.h")
-    xrt_headers.add("xrt/experimental/xrt_version.h")
-    xrt_headers.add("core/common/api/fence_int.h")
-    xrt_headers.add("google/protobuf/timestamp.pb.h")
-    xrt_headers.add("func.pb.h")
-    xrt_headers.add("wrapper/tracer.h")
+    xrt_headers = []
+    xrt_headers.append("chrono")
+    xrt_headers.append("typeinfo")
+    xrt_headers.append("xrt.h")
+    xrt_headers.append("xrt/xrt_bo.h")
+    xrt_headers.append("xrt/xrt_aie.h")
+    xrt_headers.append("xrt/xrt_device.h")
+    xrt_headers.append("xrt/xrt_hw_context.h")
+    xrt_headers.append("xrt/xrt_kernel.h")
+    xrt_headers.append("xrt/xrt_uuid.h")
+    xrt_headers.append("xrt/experimental/xrt_ip.h")
+    xrt_headers.append("xrt/experimental/xrt_mailbox.h")
+    xrt_headers.append("xrt/experimental/xrt_module.h")
+    xrt_headers.append("xrt/experimental/xrt_kernel.h")
+    xrt_headers.append("xrt/experimental/xrt_profile.h")
+    xrt_headers.append("xrt/experimental/xrt_queue.h")
+    xrt_headers.append("xrt/experimental/xrt_error.h")
+    xrt_headers.append("xrt/experimental/xrt_ext.h")
+    xrt_headers.append("xrt/experimental/xrt_ini.h")
+    xrt_headers.append("xrt/experimental/xrt_message.h")
+    xrt_headers.append("xrt/experimental/xrt_system.h")
+    xrt_headers.append("xrt/experimental/xrt_aie.h")
+    xrt_headers.append("xrt/experimental/xrt_version.h")
+    xrt_headers.append("core/common/api/fence_int.h")
+    xrt_headers.append("google/protobuf/timestamp.pb.h")
+    xrt_headers.append("func.pb.h")
+    xrt_headers.append("wrapper/tracer.h")
     with open(hook_xrt_h_f, 'w', newline='\n') as out:
         lines = """
 #define XCL_DRIVER_DLL_EXPORT
@@ -395,21 +394,29 @@ def gen_wrapper_funcs(funcs: set, class_dict: dict, out_cpp_dir: str):
             lines = lines + f"#include <{h}>\n"
         out.write(f"{lines}")
 
-    for decl in funcs:
+    for decl in sorted(funcs):
+        is_destructor = False
+        if "::~" in decl:
+          is_destructor = True
         func_info = parse_cpp_func_args.get_func_info(decl)
         if 'return' in func_info:
             func_ret = func_info['return']
         else:
             func_ret = None
         if 'props' in func_info:
-            func_p = func_info['props']
+            func_p = f" {func_info['props'].strip()}"
+        else:
+            func_p = ""
         func_s = func_info['func'] + "("
         if 'arg' in func_info:
             args_types_list = []
             args_names_list = []
             for a in func_info['arg']:
                 args_types_list.append(a[0])
-                args_names_list.append(a[1])
+                if "std::unique_ptr" in a[0] or "&&" in a[0]:
+                    args_names_list.append(f"std::move({a[1]})")
+                else:
+                    args_names_list.append(a[1])
             args_type_str = ', '.join(args_types_list)
             args_name_str = ', '.join(args_names_list)
         else:
@@ -420,7 +427,7 @@ def gen_wrapper_funcs(funcs: set, class_dict: dict, out_cpp_dir: str):
         mname = fmangled_map[func_s]
         if not mname:
             sys.exit(f"failed to get mangled name for \'{func_s}\'.")
-        func_c_match = re.search(r"([\w:]+)::operator\s+([\w:*&\s]+)$", func_name);
+        func_c_match = re.search(r"([\w:]+)::(operator\s+[\w:*&\s]+)$", func_name);
         if not func_c_match:
             func_c_match = re.search(r"([\w:]+)::([\w=\*&\-\+<>\s~]+)$", func_name)
         func_f = None
@@ -449,111 +456,124 @@ def gen_wrapper_funcs(funcs: set, class_dict: dict, out_cpp_dir: str):
         if 'arg' in func_info:
             for a in func_info['arg']:
                 args_list.append(' '.join(a))
-        args_str = ','.join(args_list)
+        args_str = ', '.join(args_list)
         is_constructor = False
-        if not func_ret and not re.search(r"~", func_info['func']):
+        if not func_ret and not re.search(r"~", func_info['func']) and not re.search(r"operator[\s\-\+=>&\*]+", func_n):
             if not func_c_match:
-                sys.exit(f"failed to define function type for constructor \'{dec}\', no class detected.")
+                sys.exit(f"failed to define function type for constructor \'{decl}\', no class detected.")
             func_type_ret = f"{func_c}*"
             is_constructor = True
         elif re.search(r"~", func_info['func']):
             func_type_ret = "void"
         else:
-            func_type_ret = "{func_ret}"
-        if func_c_match:
-            func_type_def = f"typedef {func_type_ret} (*func_t)(void*, {args_type_str});"
+            func_type_ret = f"{func_ret}"
+        operator_special_ret = re.search(r"operator\s([\w\s:]+[\*]*)\s*", func_n)
+        if operator_special_ret:
+            func_type_ret = operator_special_ret.group(1)
+        is_class_member = False
+        if func_c in class_dict:
+            # TODO: how about static class function, we need detection in future too
+            if "static" not in decl and class_dict[func_c] == "class":
+                if not re.search(r"operator\s*==]", decl):
+                    is_class_member = True
+        if is_class_member:
+            if args_type_str != "" and args_type_str != "void":
+              func_type_def = f"typedef {func_type_ret} (*func_t)(void*, {args_type_str});"
+            else:
+              func_type_def = f"typedef {func_type_ret} (*func_t)(void*);"
         else:
             func_type_def = f"typedef {func_type_ret} (*func_t)({args_type_str});"
+
+        constructor_mem_init = dict()
+        aie_error_lambda = lambda arg_names_str: (
+                "command_error(" + re.sub(r",[^,]+$", "", arg_names_str) + ", \"\")")
+        constructor_mem_init["xrt::runlist::aie_error"] = aie_error_lambda
+        constructor_mem_init["xrt::run::aie_error"] = aie_error_lambda
+        
         with open(func_f, 'a', newline='\n') as out:
             print(f"gen hook: \"{func_f}\"")
-            if func_ret:
-                lines = f"\n{func_ret}"
+            if "boost::any" in decl:
+                lines = "#include <boost/any.hpp>\n\n"
             else:
-                lines = ""
+                lines = "\n"
+            if func_ret:
+                lines = lines + f"{func_ret}\n"
+            lines = lines + f"""{func_c}::
+{func_n}({args_str}){func_p}"""
+            if is_constructor and func_c in constructor_mem_init:
+                mem_init_str = constructor_mem_init[func_c](args_name_str)
+                lines = lines + f"\n:{mem_init_str}\n"
             lines = lines + f"""
-{func_c}::
-{func_n}({args_str})
 {{
-  xbtracer_proto::Func func;
-  func.set_name(\"{func_s}\");
-  auto now = std::chrono::system_clock::now();
-  auto duration = now.time_since_epoch();
-  auto seconds = std::chrono::duration_cast<std::chrono::seconds>(duration);
-  auto micros = std::chrono::duration_cast<std::chrono::microseconds>(duration - seconds);
-
-  google::protobuf::Timestamp* ts = func.mutable_timestamp();
-  ts->set_seconds(seconds.count());
-  ts->set_nanos(micros.count() * 1000); // Convert microseconds to nanoseconds
-
-  uint32_t pid = getpid_current_os();
-  func.set_pid(pid);
-  func.set_status(xbtracer_proto::Func_FuncStatus_FUNC_ENTRY);
-"""
-            is_class_member = False
-            if func_c in class_dict:
-                # TODO: how about static class function, we need detection in future too
-                if class_dict[func_c] == "class":
-                    is_class_member = True
-                    # add handle to the arguments
-                    lines = lines + f"""
-  auto this_pimpl = this->get_handle();
-  void* this_pimpl_ptr = reinterpret_cast<void*>(this_pimpl.get());
-  xbtracer_proto::Arg* arg = func.add_arg();
-  arg->set_name("pimpl");
-  arg->set_type("void*");
-  arg->set_size(static_cast<uint32_t>(sizeof(void*) & 0xFFFFFFFFU));
-  arg->set_value(std::string(reinterpret_cast<const char*>(&this_pimpl_ptr), sizeof(this_pimpl_ptr)));
-  xbtracer_write_protobuf_msg(func);
-"""
-            lines = lines + f"""
+  const char* func_s = \"{func_s}\";
   {func_type_def}
-  const char* func_mname = get_func_mname_from_signature(\"{func_s}\");
-  if (!func_mname)
-  {{
-    throw std::runtime_error("failed to get mangled name for function \\"{func_s}\\"");
-  }}
-  func_t ofunc = (func_t)xbtracer_get_original_func_addr(func_mname);
+  xbtracer_proto::Func func_entry;
+  proc_addr_type paddr_ptr;
+  bool need_trace;
 """
-            if func_c_match:
-                ofunc_args_str = f"this, {args_name_str}"
+            # there are classes don't have get_handle(), for these functions
+            # do not call xbtracer_init_member_func_entry()
+            class_no_get_handle = []
+            class_no_get_handle.append("xrt::error")
+            class_no_get_handle.append("xrt::profile::user_event")
+            class_no_get_handle.append("xrt::profile::user_range")
+            class_special_handle = dict()
+            class_special_handle["xrt::queue"] = "m_impl"
+            func_init_entry_str = "xbtracer_init_func_entry(func_entry, need_trace, func_s, paddr_ptr);"
+            if is_destructor:
+                if func_c in class_special_handle:
+                    handle_str = "this->" + class_special_handle[func_c]
+                    func_init_entry_str = f"xbtracer_init_destructor_entry({handle_str}, func_entry, need_trace, func_s, paddr_ptr);"
+                elif func_c not in class_no_get_handle:
+                    func_init_entry_str = f"xbtracer_init_destructor_entry_handle(func_entry, need_trace, func_s, paddr_ptr);"
+            if is_class_member and func_c:
+                if func_c in class_special_handle:
+                    handle_str = "this->" + class_special_handle[func_c]
+                    func_init_entry_str = f"xbtracer_init_member_func_entry({handle_str}, func_entry, need_trace, func_s, paddr_ptr);"
+                elif func_c not in class_no_get_handle:
+                    func_init_entry_str = f"xbtracer_init_member_func_entry_handle(func_entry, need_trace, func_s, paddr_ptr);"
+
+            lines = lines + f"""
+  {func_init_entry_str}
+  xbtracer_write_protobuf_msg(func_entry, need_trace);
+  func_t ofunc = (func_t)paddr_ptr;
+"""
+            if is_class_member:
+                if args_name_str != "" and args_name_str != "void":
+                    ofunc_args_str = f"(void*)this, {args_name_str}"
+                else:
+                    ofunc_args_str = "(void*)this"
             else:
                 ofunc_args_str = f"{args_name_str}"
-            if func_type_ret and not is_constructor and not re.search(r"void", func_type_ret):
+            if func_type_ret and not is_constructor and not re.search(r"void$", func_type_ret):
                 lines = lines + f"""
   {func_type_ret} ret_o = ofunc({ofunc_args_str});
 """
             else:
                 lines = lines + f"""
-ofunc({ofunc_args_str});
-"""
-            if is_class_member:
-                lines = lines + f"""
-  xbtracer_proto::Func func_exit;
-  func_exit.set_name(\"{func_s}\");
-  duration = now.time_since_epoch();
-  seconds = std::chrono::duration_cast<std::chrono::seconds>(duration);
-  micros = std::chrono::duration_cast<std::chrono::microseconds>(duration - seconds);
-
-  ts = func_exit.mutable_timestamp();
-  ts->set_seconds(seconds.count());
-  ts->set_nanos(micros.count() * 1000); // Convert microseconds to nanoseconds
-
-  func_exit.set_pid(pid);
-  func_exit.set_status(xbtracer_proto::Func_FuncStatus_FUNC_EXIT);
-  auto new_this_pimpl = this->get_handle();
-  void* new_this_pimpl_ptr = reinterpret_cast<void*>(new_this_pimpl.get());
-  xbtracer_proto::Arg* arg_exit = func_exit.add_arg();
-  arg_exit->set_name("pimpl");
-  arg_exit->set_type("void*");
-  arg_exit->set_size(static_cast<uint32_t>(sizeof(void*) & 0xFFFFFFFFU));
-  arg_exit->set_value(std::string(reinterpret_cast<const char*>(&new_this_pimpl_ptr), sizeof(new_this_pimpl_ptr)));
-  xbtracer_write_protobuf_msg(func_exit);
-"""
-            if func_ret and not re.search(r"void", func_ret):
-                lines = lines + f"""
-    return ret_o;
+  ofunc({ofunc_args_str});
 """
             lines = lines + """
-}
+  xbtracer_proto::Func func_exit;"""
+            if is_destructor:
+                func_init_exit_str = "xbtracer_init_destructor_exit(func_exit, need_trace, func_s);"
+            else:
+                func_init_exit_str = "xbtracer_init_func_exit(func_exit, need_trace, func_s);"
+                if is_class_member and func_c:
+                    if func_c in class_special_handle:
+                        handle_str = "this->" + class_special_handle[func_c]
+                        func_init_exit_str = f"xbtracer_init_member_func_exit({handle_str}, func_exit, need_trace, func_s);"
+                    elif func_c not in class_no_get_handle:
+                        func_init_exit_str = f"xbtracer_init_member_func_exit_handle(func_exit, need_trace, func_s);"
+
+            lines = lines + f"""
+  {func_init_exit_str}
+  xbtracer_write_protobuf_msg(func_exit, need_trace);
+"""
+            if not is_constructor and func_type_ret and not re.search(r"void$", func_type_ret):
+                lines = lines + f"""
+  return ret_o;
+"""
+            lines = lines + """}
 """
             out.write(lines)

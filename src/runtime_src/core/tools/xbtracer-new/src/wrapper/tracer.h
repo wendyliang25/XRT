@@ -84,7 +84,7 @@ xbtracer_write_protobuf_msg(const protobuf_msg& msg, bool need_trace)
   return xrt::tools::xbtracer::tracer::get_instance()->write_protobuf_msg(msg);
 }
 
-void*
+proc_addr_type
 xbtracer_get_original_func_addr(const char* symbol);
 
 bool

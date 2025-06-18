@@ -381,8 +381,14 @@ def gen_wrapper_funcs(funcs: set, class_dict: dict, out_cpp_dir: str):
     xrt_headers.add("func.pb.h")
     xrt_headers.add("wrapper/tracer.h")
     with open(hook_xrt_h_f, 'w', newline='\n') as out:
+        lines = """
+#define XCL_DRIVER_DLL_EXPORT
+#define XRT_API_SOURCE
+#include "xrt/detail/config.h"
+"""
         for h in xrt_headers:
-            out.write(f"#include <{h}>\n")
+            lines = lines + f"#include <{h}>\n"
+        out.write(f"{lines}")
 
     for decl in funcs:
         func_info = parse_cpp_func_args.get_func_info(decl)

@@ -77,8 +77,7 @@ template <typename protobuf_msg>
 bool
 xbtracer_write_protobuf_msg(const protobuf_msg& msg, bool need_trace)
 {
-  if (!need_trace)
-  {
+  if (!need_trace) {
     return true;
   }
   return xrt::tools::xbtracer::tracer::get_instance()->write_protobuf_msg(msg);
@@ -96,14 +95,41 @@ xbtrace_trace_current_func(void);
 void
 xbtrace_untrace_current_func(void);
 
+template <typename PFUNC>
+void
+xbtracer_trace_arg_proto(PFUNC& func_msg, const char* arg_name, const char* type_name,
+                         const std::string& val)
+{
+  xbtracer_proto::Arg* arg_proto = func_msg.add_arg();
+  arg_proto->set_name(arg_name);
+  arg_proto->set_type(type_name);
+  arg_proto->set_size(static_cast<uint32_t>(val.length() & 0xFFFFFFFFU));
+  arg_proto->set_value(val);
+}
+
 template <typename T, typename PFUNC>
 void
-xbtracer_trace_class_pimpl(T* cobj, PFUNC& func_msg)
+xbtracer_trace_arg(const char* arg_name, const T& arg, PFUNC& func_msg)
+{
+  xbtracer_trace_arg_proto(func_msg, arg_name, typeid(arg).name(),
+                           std::string(reinterpret_cast<const char*>(&arg), sizeof(arg)));
+}
+
+template <typename PFUNC>
+void
+xbtracer_trace_arg(const char* arg_name, const std::string& arg, PFUNC& func_msg)
+{
+  xbtracer_trace_arg_proto(func_msg, arg_name, typeid(arg).name(), arg);
+}
+
+template <typename SHPIMPLT, typename PFUNC>
+void
+xbtracer_trace_class_pimpl(const SHPIMPLT& sh_pimpl, PFUNC& func_msg)
 {
   // all classes we trace has pimpl handle or similar
   // the pointer of the handle will be used as an ID of the object
-  auto this_pimpl = cobj->get_handle();
-  void* this_pimpl_ptr = reinterpret_cast<void*>(this_pimpl.get());
+  const void* this_pimpl_ptr = reinterpret_cast<const void*>(sh_pimpl.get());
+
   xbtracer_proto::Arg* arg = func_msg.add_arg();
   arg->set_name("pimpl");
   arg->set_type("void*");
@@ -138,18 +164,15 @@ xbtracer_init_func_entry(PFUNC& func_msg, bool& need_trace, const char* func_s,
                          proc_addr_type& paddr_ptr)
 {
   const char* func_mname = get_func_mname_from_signature(func_s);
-  if (!func_mname)
-  {
+  if (!func_mname) {
     xbtracer_pcritical("failed to get mangled name for function\"", std::string(func_s), "\".");
   }
   paddr_ptr = xbtracer_get_original_func_addr(func_mname);
-  if (!paddr_ptr)
-  {
+  if (!paddr_ptr) {
     xbtracer_pcritical("failed to get function\"", std::string(func_s), "\", \"", std::string(func_s), "\".");
   }
 
-  if (!xbtracer_needs_trace_func())
-  {
+  if (!xbtracer_needs_trace_func()) {
     // if function doesn't need to be traced, do not initialize protobuf message
     // this is the case that the function is called from the library.
     xbtracer_pdebug("internal call to \"", std::string(func_s), "\", not tracing.");
@@ -160,6 +183,7 @@ xbtracer_init_func_entry(PFUNC& func_msg, bool& need_trace, const char* func_s,
   xbtrace_trace_current_func();
   xbrtracer_init_func_proto_msg(func_msg, func_s, xbtracer_proto::Func_FuncStatus_FUNC_ENTRY);
   need_trace = true;
+  xbtracer_pdebug("TRACE: \"", std::string(func_s), "\".");
   return true;
 }
 
@@ -167,8 +191,7 @@ template <typename PFUNC>
 bool
 xbtracer_init_func_exit(PFUNC& func_msg, bool need_trace, const char* func_s)
 {
-  if (!need_trace)
-  {
+  if (!need_trace) {
     return true;
   }
   xbtrace_untrace_current_func();
@@ -176,31 +199,60 @@ xbtracer_init_func_exit(PFUNC& func_msg, bool need_trace, const char* func_s)
   return true;
 }
 
-template <typename PFUNC, typename T>
+template <typename PFUNC, typename SHPIMPLT>
 bool
-xbrracer_init_member_func_entry(T* cobj, PFUNC& func_msg, bool& need_trace, const char* func_s,
+xbtracer_init_member_func_entry(const SHPIMPLT& sh_pimpl,
+                                PFUNC& func_msg, bool& need_trace, const char* func_s,
                                 proc_addr_type& paddr_ptr)
 {
   bool ret = xbtracer_init_func_entry(func_msg, need_trace, func_s, paddr_ptr);
-  if (need_trace)
-  {
+  if (need_trace) {
     // trace object handle pointer (pimpl) for member function
-    xbtracer_trace_class_pimpl(cobj, func_msg);
+    xbtracer_trace_class_pimpl(sh_pimpl, func_msg);
   }
   return ret;
 }
 
-template <typename PFUNC, typename T>
+template <typename PFUNC, typename SHPIMPLT>
 bool
-xbrracer_init_member_func_exit(T* cobj, PFUNC& func_msg, bool& need_trace, const char* func_s)
+xbtracer_init_member_func_exit(const SHPIMPLT& sh_pimpl, PFUNC& func_msg, bool& need_trace, const char* func_s)
 {
   bool ret = xbtracer_init_func_exit(func_msg, need_trace, func_s);
-  if (need_trace)
-  {
+  if (need_trace) {
     // trace object handle pointer (pimpl) for member function
-    xbtracer_trace_class_pimpl(cobj, func_msg);
+    xbtracer_trace_class_pimpl(sh_pimpl, func_msg);
   }
   return ret;
 }
+
+template <typename PFUNC, typename SHPIMPLT>
+bool
+xbtracer_init_destructor_entry(const SHPIMPLT& sh_pimpl,
+                                PFUNC& func_msg, bool& need_trace, const char* func_s,
+                                proc_addr_type& paddr_ptr)
+{
+  bool ret = xbtracer_init_func_entry(func_msg, need_trace, func_s, paddr_ptr);
+  if (need_trace) {
+    // TODO: needs to handle class objects release
+    xbtracer_trace_class_pimpl(sh_pimpl, func_msg);
+  }
+  return ret;
+}
+
+template <typename PFUNC>
+bool
+xbtracer_init_destructor_exit(PFUNC& func_msg, bool need_trace, const char* func_s)
+{
+  return xbtracer_init_func_exit(func_msg, need_trace, func_s);
+}
+
+#define xbtracer_init_member_func_entry_handle(func_msg, need_trace, func_s, paddr_ptr) \
+     xbtracer_init_member_func_entry(this->get_handle(), func_msg, need_trace, func_s, paddr_ptr);
+
+#define xbtracer_init_member_func_exit_handle(func_msg, need_trace, func_s) \
+     xbtracer_init_member_func_exit(this->get_handle(), func_msg, need_trace, func_s);
+
+#define xbtracer_init_destructor_entry_handle(func_msg, need_trace, func_s, paddr_ptr) \
+     xbtracer_init_destructor_entry(this->get_handle(), func_msg, need_trace, func_s, paddr_ptr);
 
 #endif // tracer_h

@@ -1,3 +1,6 @@
+#define XCL_DRIVER_DLL_EXPORT
+#define XRT_API_SOURCE
+#include "xrt/detail/config.h"
 #include <xrt/experimental/xrt_ext.h>
 #include <xrt/experimental/xrt_mailbox.h>
 #include <core/common/api/fence_int.h>

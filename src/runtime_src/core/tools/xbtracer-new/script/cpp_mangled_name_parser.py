@@ -250,17 +250,22 @@ def gen_mangled_funcs_names(funcs: set, xrt_src_root, script_dir: str, build_dir
     print(f"wrting function name to mangled name mapping to \'{out_cpp}\'.")
     # output the demangled name and the mangled name to a cpp array
     with open(out_cpp, 'w') as out:
+        lines = ""
         if is_windows():
-          out.write("#ifdef _WIN32\n")
+          lines = lines + "#ifdef _WIN32\n"
         else:
-          out.write("#ifdef __linux__\n")
-        out.write("#include <cstring>\n\n")
-        out.write("const char * func_mangled_map[] = {\n")
+          lines = lines + "#ifdef __linux__\n"
+        lines = lines + """
+#include <cstring>
+
+extern "C" const char * func_mangled_map[] = {
+"""
         fmangled_map = dict(sorted(fmangled_map.items()))
         for k, m in fmangled_map.items():
-            out.write(f"\t\"{k}\", \"{m}\",\n")
-        out.write("};\n")
-        lines = """
+            lines = lines + f"\t\"{k}\", \"{m}\",\n"
+        lines = lines + f"""
+};
+
 size_t get_size_of_func_mangled_map(void)
 {
   return sizeof(func_mangled_map)/sizeof(func_mangled_map[0]);

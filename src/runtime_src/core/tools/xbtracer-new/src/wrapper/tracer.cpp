@@ -139,13 +139,6 @@ namespace xrt::tools::xbtracer
 std::unique_ptr<xrt::tools::xbtracer::tracer> xrt::tools::xbtracer::tracer::instance = nullptr;
 std::once_flag xrt::tools::xbtracer::tracer::init_instance_flag;
 
-void*
-xbtracer_get_original_func_addr(const char*symbol)
-{
-  xrt::tools::xbtracer::tracer* tracer = xrt::tools::xbtracer::tracer::get_instance();
-  return tracer->get_proc_addr(symbol);
-}
-
 bool
 xbtracer_needs_trace_func(void)
 {

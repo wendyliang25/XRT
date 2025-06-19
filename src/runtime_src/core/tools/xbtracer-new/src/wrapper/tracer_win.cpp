@@ -24,14 +24,12 @@ void
 store_hook_funcs(void)
 {
   HMODULE wrapper_dll_h = GetModuleHandleA(wrapper_lib_name);
-  if (!wrapper_dll_h)
-  {
+  if (!wrapper_dll_h) {
     xbtracer_pcritical("failed to get handle of \"", std::string(wrapper_lib_name), "\",",
                        sys_dep_get_last_err_msg(), ".");
   }
   HMODULE xrt_dll_h = GetModuleHandleA(xrt_coreutil_name);
-  if (!xrt_dll_h)
-  {
+  if (!xrt_dll_h) {
     xbtracer_pcritical("failed to get handle of \"", std::string(xrt_coreutil_name), "\",",
                        sys_dep_get_last_err_msg(), ".");
   }
@@ -41,23 +39,19 @@ store_hook_funcs(void)
     const char* mangled_name = func_mangled_map[i];
     FARPROC paddr_o = GetProcAddress(xrt_dll_h, mangled_name);
     FARPROC paddr_w = GetProcAddress(wrapper_dll_h, mangled_name);
-    if (paddr_o)
-    {
-      if (!paddr_w)
-      {
+    if (paddr_o) {
+      if (!paddr_w) {
         // TODO: debug message for now, as we haven't implement all APIs
         xbtracer_pdebug("\"", std::string(wrapper_lib_name), "\" doesn't have \"",
                        std::string(func_s), "\"; ", std::string(mangled_name), ".");
       }
-      else
-      {
+      else {
         std::tuple<const char*, PVOID, PVOID> fmap(mangled_name, reinterpret_cast<PVOID>(paddr_w),
                                                    reinterpret_cast<PVOID>(paddr_o));
         hook_funcs_map.push_back(std::move(fmap));
       }
     }
-    else
-    {
+    else {
       xbtracer_pdebug("\"", std::string(xrt_coreutil_name), "\" doesn't have \"",
                        std::string(func_s), "\"; ", std::string(mangled_name), ".");
     }
@@ -70,15 +64,13 @@ detour_attach_xrt_funcs(void)
 {
   DetourTransactionBegin();
   DetourUpdateThread(GetCurrentThread());
-  for (auto &fmap : hook_funcs_map)
-  {
+  for (auto &fmap : hook_funcs_map) {
     const char* mangled_name = std::get<0>(fmap);
     PVOID paddr_w = std::get<1>(fmap);
     PVOID& paddr_o_r = std::get<2>(fmap);
 
     LONG ret = DetourAttach(&paddr_o_r, paddr_w);
-    if (ret != NO_ERROR)
-    {
+    if (ret != NO_ERROR) {
       xbtracer_pcritical("failed to setup detour for \"", std::string(mangled_name), "\", ",
                          ret, ".");
     }
@@ -95,15 +87,13 @@ detour_detach_xrt_funcs(void)
 {
   DetourTransactionBegin();
   DetourUpdateThread(GetCurrentThread());
-  for (auto &fmap : hook_funcs_map)
-  {
+  for (auto &fmap : hook_funcs_map) {
     const char* mangled_name = std::get<0>(fmap);
     PVOID paddr_w = std::get<1>(fmap);
     PVOID& paddr_o_r = std::get<2>(fmap);
 
     LONG ret = DetourDetach(&paddr_o_r, paddr_w);
-    if (ret != NO_ERROR)
-    {
+    if (ret != NO_ERROR) {
       xbtracer_pcritical("failed to detach detour for \"", std::string(mangled_name), "\", ",
                          ret, ".");
     }
@@ -134,12 +124,10 @@ DllMain(HMODULE hmodule, DWORD  ul_reason_for_call, LPVOID lp_reserved)
 proc_addr_type
 xbtracer_get_original_func_addr(const char* symbol)
 {
-  for (auto &fmap : hook_funcs_map)
-  {
+  for (auto &fmap : hook_funcs_map) {
     const char* mangled_name = std::get<0>(fmap);
 
-    if (!strcmp(symbol, mangled_name))
-    {
+    if (!strcmp(symbol, mangled_name)) {
       PVOID paddr_o_r = std::get<2>(fmap);
       return reinterpret_cast<proc_addr_type>(paddr_o_r);
     }

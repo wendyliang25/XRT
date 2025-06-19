@@ -1,0 +1,158 @@
+#include <wrapper/hook_xrt.h>
+
+bool
+xrt::aie::device::
+write_aie_reg(pid_t pid, uint16_t context_id, uint16_t col, uint16_t row, uint32_t reg_addr, uint32_t reg_val)
+{
+  const char* func_s = "xrt::aie::device::write_aie_reg(pid_t, uint16_t, uint16_t, uint16_t, uint32_t, uint32_t)";
+  typedef bool (*func_t)(void*, pid_t, uint16_t, uint16_t, uint16_t, uint32_t, uint32_t);
+  xbtracer_proto::Func func_entry;
+  proc_addr_type paddr_ptr;
+  bool need_trace;
+
+  xbtracer_init_member_func_entry_handle(func_entry, need_trace, func_s, paddr_ptr);
+  xbtracer_write_protobuf_msg(func_entry, need_trace);
+  func_t ofunc = (func_t)paddr_ptr;
+
+  bool ret_o = ofunc((void*)this, pid, context_id, col, row, reg_addr, reg_val);
+
+  xbtracer_proto::Func func_exit;
+  xbtracer_init_member_func_exit_handle(func_exit, need_trace, func_s);
+  xbtracer_write_protobuf_msg(func_exit, need_trace);
+
+  return ret_o;
+}
+
+size_t
+xrt::aie::device::
+write_aie_mem(pid_t pid, uint16_t context_id, uint16_t col, uint16_t row, uint32_t offset, const std::vector<char>& data)
+{
+  const char* func_s = "xrt::aie::device::write_aie_mem(pid_t, uint16_t, uint16_t, uint16_t, uint32_t, const std::vector<char>&)";
+  typedef size_t (*func_t)(void*, pid_t, uint16_t, uint16_t, uint16_t, uint32_t, const std::vector<char>&);
+  xbtracer_proto::Func func_entry;
+  proc_addr_type paddr_ptr;
+  bool need_trace;
+
+  xbtracer_init_member_func_entry_handle(func_entry, need_trace, func_s, paddr_ptr);
+  xbtracer_write_protobuf_msg(func_entry, need_trace);
+  func_t ofunc = (func_t)paddr_ptr;
+
+  size_t ret_o = ofunc((void*)this, pid, context_id, col, row, offset, data);
+
+  xbtracer_proto::Func func_exit;
+  xbtracer_init_member_func_exit_handle(func_exit, need_trace, func_s);
+  xbtracer_write_protobuf_msg(func_exit, need_trace);
+
+  return ret_o;
+}
+
+std::vector<char>
+xrt::aie::device::
+read_aie_mem(pid_t pid, uint16_t context_id, uint16_t col, uint16_t row, uint32_t offset, uint32_t size) const
+{
+  const char* func_s = "xrt::aie::device::read_aie_mem(pid_t, uint16_t, uint16_t, uint16_t, uint32_t, uint32_t)";
+  typedef std::vector<char> (*func_t)(void*, pid_t, uint16_t, uint16_t, uint16_t, uint32_t, uint32_t);
+  xbtracer_proto::Func func_entry;
+  proc_addr_type paddr_ptr;
+  bool need_trace;
+
+  xbtracer_init_member_func_entry_handle(func_entry, need_trace, func_s, paddr_ptr);
+  xbtracer_write_protobuf_msg(func_entry, need_trace);
+  func_t ofunc = (func_t)paddr_ptr;
+
+  std::vector<char> ret_o = ofunc((void*)this, pid, context_id, col, row, offset, size);
+
+  xbtracer_proto::Func func_exit;
+  xbtracer_init_member_func_exit_handle(func_exit, need_trace, func_s);
+  xbtracer_write_protobuf_msg(func_exit, need_trace);
+
+  return ret_o;
+}
+
+uint32_t
+xrt::aie::device::
+read_aie_reg(pid_t pid, uint16_t context_id, uint16_t col, uint16_t row, uint32_t reg_addr) const
+{
+  const char* func_s = "xrt::aie::device::read_aie_reg(pid_t, uint16_t, uint16_t, uint16_t, uint32_t)";
+  typedef uint32_t (*func_t)(void*, pid_t, uint16_t, uint16_t, uint16_t, uint32_t);
+  xbtracer_proto::Func func_entry;
+  proc_addr_type paddr_ptr;
+  bool need_trace;
+
+  xbtracer_init_member_func_entry_handle(func_entry, need_trace, func_s, paddr_ptr);
+  xbtracer_write_protobuf_msg(func_entry, need_trace);
+  func_t ofunc = (func_t)paddr_ptr;
+
+  uint32_t ret_o = ofunc((void*)this, pid, context_id, col, row, reg_addr);
+
+  xbtracer_proto::Func func_exit;
+  xbtracer_init_member_func_exit_handle(func_exit, need_trace, func_s);
+  xbtracer_write_protobuf_msg(func_exit, need_trace);
+
+  return ret_o;
+}
+
+void
+xrt::aie::device::
+open_context(xrt::aie::device::access_mode mode)
+{
+  const char* func_s = "xrt::aie::device::open_context(xrt::aie::device::access_mode)";
+  typedef void (*func_t)(void*, xrt::aie::device::access_mode);
+  xbtracer_proto::Func func_entry;
+  proc_addr_type paddr_ptr;
+  bool need_trace;
+
+  xbtracer_init_member_func_entry_handle(func_entry, need_trace, func_s, paddr_ptr);
+  xbtracer_write_protobuf_msg(func_entry, need_trace);
+  func_t ofunc = (func_t)paddr_ptr;
+
+  ofunc((void*)this, mode);
+
+  xbtracer_proto::Func func_exit;
+  xbtracer_init_member_func_exit_handle(func_exit, need_trace, func_s);
+  xbtracer_write_protobuf_msg(func_exit, need_trace);
+}
+
+void
+xrt::aie::program::
+valid_or_error()
+{
+  const char* func_s = "xrt::aie::program::valid_or_error(void)";
+  typedef void (*func_t)(void*);
+  xbtracer_proto::Func func_entry;
+  proc_addr_type paddr_ptr;
+  bool need_trace;
+
+  xbtracer_init_member_func_entry_handle(func_entry, need_trace, func_s, paddr_ptr);
+  xbtracer_write_protobuf_msg(func_entry, need_trace);
+  func_t ofunc = (func_t)paddr_ptr;
+
+  ofunc((void*)this);
+
+  xbtracer_proto::Func func_exit;
+  xbtracer_init_member_func_exit_handle(func_exit, need_trace, func_s);
+  xbtracer_write_protobuf_msg(func_exit, need_trace);
+}
+
+xrt::aie::program::size_type
+xrt::aie::program::
+get_partition_size() const
+{
+  const char* func_s = "xrt::aie::program::get_partition_size(void)";
+  typedef xrt::aie::program::size_type (*func_t)(void*);
+  xbtracer_proto::Func func_entry;
+  proc_addr_type paddr_ptr;
+  bool need_trace;
+
+  xbtracer_init_member_func_entry_handle(func_entry, need_trace, func_s, paddr_ptr);
+  xbtracer_write_protobuf_msg(func_entry, need_trace);
+  func_t ofunc = (func_t)paddr_ptr;
+
+  xrt::aie::program::size_type ret_o = ofunc((void*)this);
+
+  xbtracer_proto::Func func_exit;
+  xbtracer_init_member_func_exit_handle(func_exit, need_trace, func_s);
+  xbtracer_write_protobuf_msg(func_exit, need_trace);
+
+  return ret_o;
+}

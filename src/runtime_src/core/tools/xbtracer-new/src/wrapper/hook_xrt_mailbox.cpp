@@ -5,16 +5,18 @@ xrt::mailbox::
 get_arg_index(const std::string& argnm) const
 {
   const char* func_s = "xrt::mailbox::get_arg_index(const std::string&)";
-  typedef int (*func_t)(void*, const std::string&);
+  typedef int (xrt::mailbox::*func_t)(const std::string&) const;
   xbtracer_proto::Func func_entry;
   proc_addr_type paddr_ptr;
+  func_t ofunc = nullptr;
+  void **ofunc_ptr = (void **)&ofunc;
   bool need_trace;
 
   xbtracer_init_member_func_entry_handle(func_entry, need_trace, func_s, paddr_ptr);
   xbtracer_write_protobuf_msg(func_entry, need_trace);
-  func_t ofunc = (func_t)paddr_ptr;
+  *ofunc_ptr = (void*)paddr_ptr;
 
-  int ret_o = ofunc((void*)this, argnm);
+  int ret_o = (this->*ofunc)(argnm);
 
   xbtracer_proto::Func func_exit;
   xbtracer_init_member_func_exit_handle(func_exit, need_trace, func_s);
@@ -28,16 +30,18 @@ xrt::mailbox::
 get_arg(int index) const
 {
   const char* func_s = "xrt::mailbox::get_arg(int)";
-  typedef std::pair<const void*, size_t> (*func_t)(void*, int);
+  typedef std::pair<const void*, size_t> (xrt::mailbox::*func_t)(int) const;
   xbtracer_proto::Func func_entry;
   proc_addr_type paddr_ptr;
+  func_t ofunc = nullptr;
+  void **ofunc_ptr = (void **)&ofunc;
   bool need_trace;
 
   xbtracer_init_member_func_entry_handle(func_entry, need_trace, func_s, paddr_ptr);
   xbtracer_write_protobuf_msg(func_entry, need_trace);
-  func_t ofunc = (func_t)paddr_ptr;
+  *ofunc_ptr = (void*)paddr_ptr;
 
-  std::pair<const void*, size_t> ret_o = ofunc((void*)this, index);
+  std::pair<const void*, size_t> ret_o = (this->*ofunc)(index);
 
   xbtracer_proto::Func func_exit;
   xbtracer_init_member_func_exit_handle(func_exit, need_trace, func_s);
@@ -51,16 +55,18 @@ xrt::mailbox::
 read()
 {
   const char* func_s = "xrt::mailbox::read(void)";
-  typedef void (*func_t)(void*);
+  typedef void (xrt::mailbox::*func_t)(void);
   xbtracer_proto::Func func_entry;
   proc_addr_type paddr_ptr;
+  func_t ofunc = nullptr;
+  void **ofunc_ptr = (void **)&ofunc;
   bool need_trace;
 
   xbtracer_init_member_func_entry_handle(func_entry, need_trace, func_s, paddr_ptr);
   xbtracer_write_protobuf_msg(func_entry, need_trace);
-  func_t ofunc = (func_t)paddr_ptr;
+  *ofunc_ptr = (void*)paddr_ptr;
 
-  ofunc((void*)this);
+  (this->*ofunc)();
 
   xbtracer_proto::Func func_exit;
   xbtracer_init_member_func_exit_handle(func_exit, need_trace, func_s);
@@ -72,16 +78,18 @@ xrt::mailbox::
 set_arg_at_index(int index, const void* value, size_t bytes)
 {
   const char* func_s = "xrt::mailbox::set_arg_at_index(int, const void*, size_t)";
-  typedef void (*func_t)(void*, int, const void*, size_t);
+  typedef void (xrt::mailbox::*func_t)(int, const void*, size_t);
   xbtracer_proto::Func func_entry;
   proc_addr_type paddr_ptr;
+  func_t ofunc = nullptr;
+  void **ofunc_ptr = (void **)&ofunc;
   bool need_trace;
 
   xbtracer_init_member_func_entry_handle(func_entry, need_trace, func_s, paddr_ptr);
   xbtracer_write_protobuf_msg(func_entry, need_trace);
-  func_t ofunc = (func_t)paddr_ptr;
+  *ofunc_ptr = (void*)paddr_ptr;
 
-  ofunc((void*)this, index, value, bytes);
+  (this->*ofunc)(index, value, bytes);
 
   xbtracer_proto::Func func_exit;
   xbtracer_init_member_func_exit_handle(func_exit, need_trace, func_s);
@@ -93,16 +101,18 @@ xrt::mailbox::
 set_arg_at_index(int index, const xrt::bo& arg2)
 {
   const char* func_s = "xrt::mailbox::set_arg_at_index(int, const xrt::bo&)";
-  typedef void (*func_t)(void*, int, const xrt::bo&);
+  typedef void (xrt::mailbox::*func_t)(int, const xrt::bo&);
   xbtracer_proto::Func func_entry;
   proc_addr_type paddr_ptr;
+  func_t ofunc = nullptr;
+  void **ofunc_ptr = (void **)&ofunc;
   bool need_trace;
 
   xbtracer_init_member_func_entry_handle(func_entry, need_trace, func_s, paddr_ptr);
   xbtracer_write_protobuf_msg(func_entry, need_trace);
-  func_t ofunc = (func_t)paddr_ptr;
+  *ofunc_ptr = (void*)paddr_ptr;
 
-  ofunc((void*)this, index, arg2);
+  (this->*ofunc)(index, arg2);
 
   xbtracer_proto::Func func_exit;
   xbtracer_init_member_func_exit_handle(func_exit, need_trace, func_s);
@@ -114,16 +124,18 @@ xrt::mailbox::
 write()
 {
   const char* func_s = "xrt::mailbox::write(void)";
-  typedef void (*func_t)(void*);
+  typedef void (xrt::mailbox::*func_t)(void);
   xbtracer_proto::Func func_entry;
   proc_addr_type paddr_ptr;
+  func_t ofunc = nullptr;
+  void **ofunc_ptr = (void **)&ofunc;
   bool need_trace;
 
   xbtracer_init_member_func_entry_handle(func_entry, need_trace, func_s, paddr_ptr);
   xbtracer_write_protobuf_msg(func_entry, need_trace);
-  func_t ofunc = (func_t)paddr_ptr;
+  *ofunc_ptr = (void*)paddr_ptr;
 
-  ofunc((void*)this);
+  (this->*ofunc)();
 
   xbtracer_proto::Func func_exit;
   xbtracer_init_member_func_exit_handle(func_exit, need_trace, func_s);
@@ -137,11 +149,13 @@ mailbox(const xrt::run& run)
   typedef xrt::mailbox* (*func_t)(void*, const xrt::run&);
   xbtracer_proto::Func func_entry;
   proc_addr_type paddr_ptr;
+  func_t ofunc = nullptr;
+  void **ofunc_ptr = (void **)&ofunc;
   bool need_trace;
 
   xbtracer_init_member_func_entry_handle(func_entry, need_trace, func_s, paddr_ptr);
   xbtracer_write_protobuf_msg(func_entry, need_trace);
-  func_t ofunc = (func_t)paddr_ptr;
+  *ofunc_ptr = (void*)paddr_ptr;
 
   ofunc((void*)this, run);
 

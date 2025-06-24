@@ -476,13 +476,22 @@ def gen_wrapper_funcs(funcs: set, class_dict: dict, out_cpp_dir: str, func_mangl
             if "static" not in decl and class_dict[func_c] == "class":
                 if not re.search(r"operator\s*==]", decl):
                     is_class_member = True
-        if is_class_member:
+        if is_constructor:
             if args_type_str != "" and args_type_str != "void":
-              func_type_def = f"typedef {func_type_ret} (*func_t)(void*, {args_type_str});"
+                func_type_def = f"typedef {func_type_ret} (*func_t)(void*, {args_type_str})"
             else:
-              func_type_def = f"typedef {func_type_ret} (*func_t)(void*);"
+                func_type_def = f"typedef {func_type_ret} (*func_t)(void*)"
+        elif is_destructor:
+            func_type_def = f"typedef {func_type_ret} (*func_t)(void*)"
+        elif is_class_member:
+            if args_type_str != "" and args_type_str != "void":
+                func_type_def = f"typedef {func_type_ret} ({func_c}::*func_t)({args_type_str})"
+            else:
+                func_type_def = f"typedef {func_type_ret} ({func_c}::*func_t)(void)"
+            if func_p and "const" in func_p:
+                func_type_def = f"{func_type_def} const"
         else:
-            func_type_def = f"typedef {func_type_ret} (*func_t)({args_type_str});"
+            func_type_def = f"typedef {func_type_ret} (*func_t)({args_type_str})"
 
         constructor_mem_init = dict()
         aie_error_lambda = lambda arg_names_str: (
@@ -506,9 +515,11 @@ def gen_wrapper_funcs(funcs: set, class_dict: dict, out_cpp_dir: str, func_mangl
             lines = lines + f"""
 {{
   const char* func_s = \"{func_s}\";
-  {func_type_def}
+  {func_type_def};
   xbtracer_proto::Func func_entry;
   proc_addr_type paddr_ptr;
+  func_t ofunc = nullptr;
+  void **ofunc_ptr = (void **)&ofunc;
   bool need_trace;
 """
             # there are classes don't have get_handle(), for these functions
@@ -536,16 +547,30 @@ def gen_wrapper_funcs(funcs: set, class_dict: dict, out_cpp_dir: str, func_mangl
             lines = lines + f"""
   {func_init_entry_str}
   xbtracer_write_protobuf_msg(func_entry, need_trace);
-  func_t ofunc = (func_t)paddr_ptr;
+  *ofunc_ptr = (void*)paddr_ptr;
 """
-            if is_class_member:
+            if is_constructor:
                 if args_name_str != "" and args_name_str != "void":
                     ofunc_args_str = f"(void*)this, {args_name_str}"
                 else:
                     ofunc_args_str = "(void*)this"
+            elif is_destructor:
+                ofunc_args_str = "(void*)this"
             else:
                 ofunc_args_str = f"{args_name_str}"
-            if func_type_ret and not is_constructor and not re.search(r"void$", func_type_ret):
+            if is_constructor or is_destructor:
+                lines = lines + f"""
+  ofunc({ofunc_args_str});
+"""
+            elif is_class_member and func_type_ret and not re.search(r"void$", func_type_ret):
+                lines = lines + f"""
+  {func_type_ret} ret_o = (this->*ofunc)({ofunc_args_str});
+"""
+            elif is_class_member:
+                lines = lines + f"""
+  (this->*ofunc)({ofunc_args_str});
+"""
+            elif func_type_ret and not re.search(r"void$", func_type_ret):
                 lines = lines + f"""
   {func_type_ret} ret_o = ofunc({ofunc_args_str});
 """

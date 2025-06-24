@@ -5,16 +5,18 @@ xrt::error::
 to_string() const
 {
   const char* func_s = "xrt::error::to_string(void)";
-  typedef std::string (*func_t)(void*);
+  typedef std::string (xrt::error::*func_t)(void) const;
   xbtracer_proto::Func func_entry;
   proc_addr_type paddr_ptr;
+  func_t ofunc = nullptr;
+  void **ofunc_ptr = (void **)&ofunc;
   bool need_trace;
 
   xbtracer_init_func_entry(func_entry, need_trace, func_s, paddr_ptr);
   xbtracer_write_protobuf_msg(func_entry, need_trace);
-  func_t ofunc = (func_t)paddr_ptr;
+  *ofunc_ptr = (void*)paddr_ptr;
 
-  std::string ret_o = ofunc((void*)this);
+  std::string ret_o = (this->*ofunc)();
 
   xbtracer_proto::Func func_exit;
   xbtracer_init_func_exit(func_exit, need_trace, func_s);
@@ -30,11 +32,13 @@ error(const xrt::device& device, xrtErrorClass ecl)
   typedef xrt::error* (*func_t)(void*, const xrt::device&, xrtErrorClass);
   xbtracer_proto::Func func_entry;
   proc_addr_type paddr_ptr;
+  func_t ofunc = nullptr;
+  void **ofunc_ptr = (void **)&ofunc;
   bool need_trace;
 
   xbtracer_init_func_entry(func_entry, need_trace, func_s, paddr_ptr);
   xbtracer_write_protobuf_msg(func_entry, need_trace);
-  func_t ofunc = (func_t)paddr_ptr;
+  *ofunc_ptr = (void*)paddr_ptr;
 
   ofunc((void*)this, device, ecl);
 
@@ -50,11 +54,13 @@ error(xrtErrorCode ecl, xrtErrorTime timestamp)
   typedef xrt::error* (*func_t)(void*, xrtErrorCode, xrtErrorTime);
   xbtracer_proto::Func func_entry;
   proc_addr_type paddr_ptr;
+  func_t ofunc = nullptr;
+  void **ofunc_ptr = (void **)&ofunc;
   bool need_trace;
 
   xbtracer_init_func_entry(func_entry, need_trace, func_s, paddr_ptr);
   xbtracer_write_protobuf_msg(func_entry, need_trace);
-  func_t ofunc = (func_t)paddr_ptr;
+  *ofunc_ptr = (void*)paddr_ptr;
 
   ofunc((void*)this, ecl, timestamp);
 
@@ -68,16 +74,18 @@ xrt::error::
 get_error_code() const
 {
   const char* func_s = "xrt::error::get_error_code(void)";
-  typedef xrtErrorCode (*func_t)(void*);
+  typedef xrtErrorCode (xrt::error::*func_t)(void) const;
   xbtracer_proto::Func func_entry;
   proc_addr_type paddr_ptr;
+  func_t ofunc = nullptr;
+  void **ofunc_ptr = (void **)&ofunc;
   bool need_trace;
 
   xbtracer_init_func_entry(func_entry, need_trace, func_s, paddr_ptr);
   xbtracer_write_protobuf_msg(func_entry, need_trace);
-  func_t ofunc = (func_t)paddr_ptr;
+  *ofunc_ptr = (void*)paddr_ptr;
 
-  xrtErrorCode ret_o = ofunc((void*)this);
+  xrtErrorCode ret_o = (this->*ofunc)();
 
   xbtracer_proto::Func func_exit;
   xbtracer_init_func_exit(func_exit, need_trace, func_s);
@@ -91,16 +99,18 @@ xrt::error::
 get_timestamp() const
 {
   const char* func_s = "xrt::error::get_timestamp(void)";
-  typedef xrtErrorTime (*func_t)(void*);
+  typedef xrtErrorTime (xrt::error::*func_t)(void) const;
   xbtracer_proto::Func func_entry;
   proc_addr_type paddr_ptr;
+  func_t ofunc = nullptr;
+  void **ofunc_ptr = (void **)&ofunc;
   bool need_trace;
 
   xbtracer_init_func_entry(func_entry, need_trace, func_s, paddr_ptr);
   xbtracer_write_protobuf_msg(func_entry, need_trace);
-  func_t ofunc = (func_t)paddr_ptr;
+  *ofunc_ptr = (void*)paddr_ptr;
 
-  xrtErrorTime ret_o = ofunc((void*)this);
+  xrtErrorTime ret_o = (this->*ofunc)();
 
   xbtracer_proto::Func func_exit;
   xbtracer_init_func_exit(func_exit, need_trace, func_s);

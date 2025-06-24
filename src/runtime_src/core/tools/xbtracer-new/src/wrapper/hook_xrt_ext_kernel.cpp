@@ -7,11 +7,13 @@ kernel(const xrt::hw_context& ctx, const std::string& name)
   typedef xrt::ext::kernel* (*func_t)(void*, const xrt::hw_context&, const std::string&);
   xbtracer_proto::Func func_entry;
   proc_addr_type paddr_ptr;
+  func_t ofunc = nullptr;
+  void **ofunc_ptr = (void **)&ofunc;
   bool need_trace;
 
   xbtracer_init_member_func_entry_handle(func_entry, need_trace, func_s, paddr_ptr);
   xbtracer_write_protobuf_msg(func_entry, need_trace);
-  func_t ofunc = (func_t)paddr_ptr;
+  *ofunc_ptr = (void*)paddr_ptr;
 
   ofunc((void*)this, ctx, name);
 
@@ -27,11 +29,13 @@ kernel(const xrt::hw_context& ctx, const xrt::module& mod, const std::string& na
   typedef xrt::ext::kernel* (*func_t)(void*, const xrt::hw_context&, const xrt::module&, const std::string&);
   xbtracer_proto::Func func_entry;
   proc_addr_type paddr_ptr;
+  func_t ofunc = nullptr;
+  void **ofunc_ptr = (void **)&ofunc;
   bool need_trace;
 
   xbtracer_init_member_func_entry_handle(func_entry, need_trace, func_s, paddr_ptr);
   xbtracer_write_protobuf_msg(func_entry, need_trace);
-  func_t ofunc = (func_t)paddr_ptr;
+  *ofunc_ptr = (void*)paddr_ptr;
 
   ofunc((void*)this, ctx, mod, name);
 

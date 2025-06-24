@@ -8,11 +8,13 @@ operator==(const xrt::device& d1, const xrt::device& d2)
   typedef bool (*func_t)(const xrt::device&, const xrt::device&);
   xbtracer_proto::Func func_entry;
   proc_addr_type paddr_ptr;
+  func_t ofunc = nullptr;
+  void **ofunc_ptr = (void **)&ofunc;
   bool need_trace;
 
   xbtracer_init_func_entry(func_entry, need_trace, func_s, paddr_ptr);
   xbtracer_write_protobuf_msg(func_entry, need_trace);
-  func_t ofunc = (func_t)paddr_ptr;
+  *ofunc_ptr = (void*)paddr_ptr;
 
   bool ret_o = ofunc(d1, d2);
 
@@ -31,11 +33,13 @@ set_read_range(const xrt::kernel& kernel, uint32_t start, uint32_t size)
   typedef void (*func_t)(const xrt::kernel&, uint32_t, uint32_t);
   xbtracer_proto::Func func_entry;
   proc_addr_type paddr_ptr;
+  func_t ofunc = nullptr;
+  void **ofunc_ptr = (void **)&ofunc;
   bool need_trace;
 
   xbtracer_init_func_entry(func_entry, need_trace, func_s, paddr_ptr);
   xbtracer_write_protobuf_msg(func_entry, need_trace);
-  func_t ofunc = (func_t)paddr_ptr;
+  *ofunc_ptr = (void*)paddr_ptr;
 
   ofunc(kernel, start, size);
 

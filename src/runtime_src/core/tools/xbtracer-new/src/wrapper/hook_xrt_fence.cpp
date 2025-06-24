@@ -5,16 +5,18 @@ xrt::fence::
 wait(const std::chrono::milliseconds& timeout)
 {
   const char* func_s = "xrt::fence::wait(const std::chrono::milliseconds&)";
-  typedef std::cv_status (*func_t)(void*, const std::chrono::milliseconds&);
+  typedef std::cv_status (xrt::fence::*func_t)(const std::chrono::milliseconds&);
   xbtracer_proto::Func func_entry;
   proc_addr_type paddr_ptr;
+  func_t ofunc = nullptr;
+  void **ofunc_ptr = (void **)&ofunc;
   bool need_trace;
 
   xbtracer_init_member_func_entry_handle(func_entry, need_trace, func_s, paddr_ptr);
   xbtracer_write_protobuf_msg(func_entry, need_trace);
-  func_t ofunc = (func_t)paddr_ptr;
+  *ofunc_ptr = (void*)paddr_ptr;
 
-  std::cv_status ret_o = ofunc((void*)this, timeout);
+  std::cv_status ret_o = (this->*ofunc)(timeout);
 
   xbtracer_proto::Func func_exit;
   xbtracer_init_member_func_exit_handle(func_exit, need_trace, func_s);
@@ -28,16 +30,18 @@ xrt::fence::
 get_next_state() const
 {
   const char* func_s = "xrt::fence::get_next_state(void)";
-  typedef uint64_t (*func_t)(void*);
+  typedef uint64_t (xrt::fence::*func_t)(void) const;
   xbtracer_proto::Func func_entry;
   proc_addr_type paddr_ptr;
+  func_t ofunc = nullptr;
+  void **ofunc_ptr = (void **)&ofunc;
   bool need_trace;
 
   xbtracer_init_member_func_entry_handle(func_entry, need_trace, func_s, paddr_ptr);
   xbtracer_write_protobuf_msg(func_entry, need_trace);
-  func_t ofunc = (func_t)paddr_ptr;
+  *ofunc_ptr = (void*)paddr_ptr;
 
-  uint64_t ret_o = ofunc((void*)this);
+  uint64_t ret_o = (this->*ofunc)();
 
   xbtracer_proto::Func func_exit;
   xbtracer_init_member_func_exit_handle(func_exit, need_trace, func_s);
@@ -51,16 +55,18 @@ xrt::fence::
 get_access_mode() const
 {
   const char* func_s = "xrt::fence::get_access_mode(void)";
-  typedef xrt::fence::access_mode (*func_t)(void*);
+  typedef xrt::fence::access_mode (xrt::fence::*func_t)(void) const;
   xbtracer_proto::Func func_entry;
   proc_addr_type paddr_ptr;
+  func_t ofunc = nullptr;
+  void **ofunc_ptr = (void **)&ofunc;
   bool need_trace;
 
   xbtracer_init_member_func_entry_handle(func_entry, need_trace, func_s, paddr_ptr);
   xbtracer_write_protobuf_msg(func_entry, need_trace);
-  func_t ofunc = (func_t)paddr_ptr;
+  *ofunc_ptr = (void*)paddr_ptr;
 
-  xrt::fence::access_mode ret_o = ofunc((void*)this);
+  xrt::fence::access_mode ret_o = (this->*ofunc)();
 
   xbtracer_proto::Func func_exit;
   xbtracer_init_member_func_exit_handle(func_exit, need_trace, func_s);
@@ -74,16 +80,18 @@ xrt::fence::
 export_fence()
 {
   const char* func_s = "xrt::fence::export_fence(void)";
-  typedef xrt::fence::export_handle (*func_t)(void*);
+  typedef xrt::fence::export_handle (xrt::fence::*func_t)(void);
   xbtracer_proto::Func func_entry;
   proc_addr_type paddr_ptr;
+  func_t ofunc = nullptr;
+  void **ofunc_ptr = (void **)&ofunc;
   bool need_trace;
 
   xbtracer_init_member_func_entry_handle(func_entry, need_trace, func_s, paddr_ptr);
   xbtracer_write_protobuf_msg(func_entry, need_trace);
-  func_t ofunc = (func_t)paddr_ptr;
+  *ofunc_ptr = (void*)paddr_ptr;
 
-  xrt::fence::export_handle ret_o = ofunc((void*)this);
+  xrt::fence::export_handle ret_o = (this->*ofunc)();
 
   xbtracer_proto::Func func_exit;
   xbtracer_init_member_func_exit_handle(func_exit, need_trace, func_s);
@@ -99,11 +107,13 @@ fence(const xrt::device& device, xrt::fence::access_mode access)
   typedef xrt::fence* (*func_t)(void*, const xrt::device&, xrt::fence::access_mode);
   xbtracer_proto::Func func_entry;
   proc_addr_type paddr_ptr;
+  func_t ofunc = nullptr;
+  void **ofunc_ptr = (void **)&ofunc;
   bool need_trace;
 
   xbtracer_init_member_func_entry_handle(func_entry, need_trace, func_s, paddr_ptr);
   xbtracer_write_protobuf_msg(func_entry, need_trace);
-  func_t ofunc = (func_t)paddr_ptr;
+  *ofunc_ptr = (void*)paddr_ptr;
 
   ofunc((void*)this, device, access);
 
@@ -119,11 +129,13 @@ fence(const xrt::device& device, xrt::pid_type pid, xrt::fence::export_handle eh
   typedef xrt::fence* (*func_t)(void*, const xrt::device&, xrt::pid_type, xrt::fence::export_handle);
   xbtracer_proto::Func func_entry;
   proc_addr_type paddr_ptr;
+  func_t ofunc = nullptr;
+  void **ofunc_ptr = (void **)&ofunc;
   bool need_trace;
 
   xbtracer_init_member_func_entry_handle(func_entry, need_trace, func_s, paddr_ptr);
   xbtracer_write_protobuf_msg(func_entry, need_trace);
-  func_t ofunc = (func_t)paddr_ptr;
+  *ofunc_ptr = (void*)paddr_ptr;
 
   ofunc((void*)this, device, pid, ehdl);
 
@@ -139,11 +151,13 @@ fence(const xrt::fence& other)
   typedef xrt::fence* (*func_t)(void*, const xrt::fence&);
   xbtracer_proto::Func func_entry;
   proc_addr_type paddr_ptr;
+  func_t ofunc = nullptr;
+  void **ofunc_ptr = (void **)&ofunc;
   bool need_trace;
 
   xbtracer_init_member_func_entry_handle(func_entry, need_trace, func_s, paddr_ptr);
   xbtracer_write_protobuf_msg(func_entry, need_trace);
-  func_t ofunc = (func_t)paddr_ptr;
+  *ofunc_ptr = (void*)paddr_ptr;
 
   ofunc((void*)this, other);
 
@@ -159,11 +173,13 @@ fence(std::unique_ptr<xrt_core::fence_handle> handle)
   typedef xrt::fence* (*func_t)(void*, std::unique_ptr<xrt_core::fence_handle>);
   xbtracer_proto::Func func_entry;
   proc_addr_type paddr_ptr;
+  func_t ofunc = nullptr;
+  void **ofunc_ptr = (void **)&ofunc;
   bool need_trace;
 
   xbtracer_init_member_func_entry_handle(func_entry, need_trace, func_s, paddr_ptr);
   xbtracer_write_protobuf_msg(func_entry, need_trace);
-  func_t ofunc = (func_t)paddr_ptr;
+  *ofunc_ptr = (void*)paddr_ptr;
 
   ofunc((void*)this, std::move(handle));
 
@@ -179,11 +195,13 @@ fence(xrt::fence&& other) noexcept
   typedef xrt::fence* (*func_t)(void*, xrt::fence&&);
   xbtracer_proto::Func func_entry;
   proc_addr_type paddr_ptr;
+  func_t ofunc = nullptr;
+  void **ofunc_ptr = (void **)&ofunc;
   bool need_trace;
 
   xbtracer_init_member_func_entry_handle(func_entry, need_trace, func_s, paddr_ptr);
   xbtracer_write_protobuf_msg(func_entry, need_trace);
-  func_t ofunc = (func_t)paddr_ptr;
+  *ofunc_ptr = (void*)paddr_ptr;
 
   ofunc((void*)this, std::move(other));
 

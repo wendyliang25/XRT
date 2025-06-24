@@ -7,11 +7,13 @@ bo(const xrt::device& device, size_t sz)
   typedef xrt::ext::bo* (*func_t)(void*, const xrt::device&, size_t);
   xbtracer_proto::Func func_entry;
   proc_addr_type paddr_ptr;
+  func_t ofunc = nullptr;
+  void **ofunc_ptr = (void **)&ofunc;
   bool need_trace;
 
   xbtracer_init_member_func_entry_handle(func_entry, need_trace, func_s, paddr_ptr);
   xbtracer_write_protobuf_msg(func_entry, need_trace);
-  func_t ofunc = (func_t)paddr_ptr;
+  *ofunc_ptr = (void*)paddr_ptr;
 
   ofunc((void*)this, device, sz);
 
@@ -27,11 +29,13 @@ bo(const xrt::device& device, size_t sz, xrt::ext::bo::access_mode access)
   typedef xrt::ext::bo* (*func_t)(void*, const xrt::device&, size_t, xrt::ext::bo::access_mode);
   xbtracer_proto::Func func_entry;
   proc_addr_type paddr_ptr;
+  func_t ofunc = nullptr;
+  void **ofunc_ptr = (void **)&ofunc;
   bool need_trace;
 
   xbtracer_init_member_func_entry_handle(func_entry, need_trace, func_s, paddr_ptr);
   xbtracer_write_protobuf_msg(func_entry, need_trace);
-  func_t ofunc = (func_t)paddr_ptr;
+  *ofunc_ptr = (void*)paddr_ptr;
 
   ofunc((void*)this, device, sz, access);
 
@@ -47,11 +51,13 @@ bo(const xrt::device& device, void* userptr, size_t sz)
   typedef xrt::ext::bo* (*func_t)(void*, const xrt::device&, void*, size_t);
   xbtracer_proto::Func func_entry;
   proc_addr_type paddr_ptr;
+  func_t ofunc = nullptr;
+  void **ofunc_ptr = (void **)&ofunc;
   bool need_trace;
 
   xbtracer_init_member_func_entry_handle(func_entry, need_trace, func_s, paddr_ptr);
   xbtracer_write_protobuf_msg(func_entry, need_trace);
-  func_t ofunc = (func_t)paddr_ptr;
+  *ofunc_ptr = (void*)paddr_ptr;
 
   ofunc((void*)this, device, userptr, sz);
 
@@ -67,11 +73,13 @@ bo(const xrt::device& device, void* userptr, size_t sz, xrt::ext::bo::access_mod
   typedef xrt::ext::bo* (*func_t)(void*, const xrt::device&, void*, size_t, xrt::ext::bo::access_mode);
   xbtracer_proto::Func func_entry;
   proc_addr_type paddr_ptr;
+  func_t ofunc = nullptr;
+  void **ofunc_ptr = (void **)&ofunc;
   bool need_trace;
 
   xbtracer_init_member_func_entry_handle(func_entry, need_trace, func_s, paddr_ptr);
   xbtracer_write_protobuf_msg(func_entry, need_trace);
-  func_t ofunc = (func_t)paddr_ptr;
+  *ofunc_ptr = (void*)paddr_ptr;
 
   ofunc((void*)this, device, userptr, sz, access);
 
@@ -87,11 +95,13 @@ bo(const xrt::device& device, xrt::pid_type pid, xrt::bo::export_handle ehdl)
   typedef xrt::ext::bo* (*func_t)(void*, const xrt::device&, xrt::pid_type, xrt::bo::export_handle);
   xbtracer_proto::Func func_entry;
   proc_addr_type paddr_ptr;
+  func_t ofunc = nullptr;
+  void **ofunc_ptr = (void **)&ofunc;
   bool need_trace;
 
   xbtracer_init_member_func_entry_handle(func_entry, need_trace, func_s, paddr_ptr);
   xbtracer_write_protobuf_msg(func_entry, need_trace);
-  func_t ofunc = (func_t)paddr_ptr;
+  *ofunc_ptr = (void*)paddr_ptr;
 
   ofunc((void*)this, device, pid, ehdl);
 
@@ -107,11 +117,13 @@ bo(const xrt::hw_context& hwctx, size_t sz)
   typedef xrt::ext::bo* (*func_t)(void*, const xrt::hw_context&, size_t);
   xbtracer_proto::Func func_entry;
   proc_addr_type paddr_ptr;
+  func_t ofunc = nullptr;
+  void **ofunc_ptr = (void **)&ofunc;
   bool need_trace;
 
   xbtracer_init_member_func_entry_handle(func_entry, need_trace, func_s, paddr_ptr);
   xbtracer_write_protobuf_msg(func_entry, need_trace);
-  func_t ofunc = (func_t)paddr_ptr;
+  *ofunc_ptr = (void*)paddr_ptr;
 
   ofunc((void*)this, hwctx, sz);
 
@@ -127,11 +139,13 @@ bo(const xrt::hw_context& hwctx, size_t sz, xrt::ext::bo::access_mode access)
   typedef xrt::ext::bo* (*func_t)(void*, const xrt::hw_context&, size_t, xrt::ext::bo::access_mode);
   xbtracer_proto::Func func_entry;
   proc_addr_type paddr_ptr;
+  func_t ofunc = nullptr;
+  void **ofunc_ptr = (void **)&ofunc;
   bool need_trace;
 
   xbtracer_init_member_func_entry_handle(func_entry, need_trace, func_s, paddr_ptr);
   xbtracer_write_protobuf_msg(func_entry, need_trace);
-  func_t ofunc = (func_t)paddr_ptr;
+  *ofunc_ptr = (void*)paddr_ptr;
 
   ofunc((void*)this, hwctx, sz, access);
 
@@ -147,11 +161,13 @@ bo(const xrt::hw_context& hwctx, xrt::pid_type pid, xrt::bo::export_handle ehdl)
   typedef xrt::ext::bo* (*func_t)(void*, const xrt::hw_context&, xrt::pid_type, xrt::bo::export_handle);
   xbtracer_proto::Func func_entry;
   proc_addr_type paddr_ptr;
+  func_t ofunc = nullptr;
+  void **ofunc_ptr = (void **)&ofunc;
   bool need_trace;
 
   xbtracer_init_member_func_entry_handle(func_entry, need_trace, func_s, paddr_ptr);
   xbtracer_write_protobuf_msg(func_entry, need_trace);
-  func_t ofunc = (func_t)paddr_ptr;
+  *ofunc_ptr = (void*)paddr_ptr;
 
   ofunc((void*)this, hwctx, pid, ehdl);
 

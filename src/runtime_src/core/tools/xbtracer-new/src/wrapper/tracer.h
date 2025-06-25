@@ -30,6 +30,8 @@
 #include <xrt/experimental/xrt_system.h>
 #include <xrt/experimental/xrt_aie.h>
 
+#include <google/protobuf/io/coded_stream.h>
+#include <google/protobuf/io/zero_copy_stream_impl.h>
 #include <google/protobuf/timestamp.pb.h>
 #include <func.pb.h>
 #include <common/trace_utils.h>
@@ -124,9 +126,16 @@ public:
   bool
   write_protobuf_msg(const protobuf_msg& msg)
   {
-    bool ret = msg.SerializeToOstream(&tracer_ofile);
+    uint32_t msg_size = msg.ByteSizeLong() & 0xFFFFFFFFU;
+
+    google::protobuf::io::OstreamOutputStream zero_copy_output(&tracer_ofile);
+    google::protobuf::io::CodedOutputStream coded_output(&zero_copy_output);
+
+    coded_output.WriteVarint32(msg_size);
+    msg.SerializeToCodedStream(&coded_output);
+
     tracer_ofile.flush();
-    return ret;
+    return !coded_output.HadError();
   }
 
   bool

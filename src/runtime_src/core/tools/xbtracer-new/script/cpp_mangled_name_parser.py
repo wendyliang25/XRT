@@ -398,6 +398,8 @@ def gen_wrapper_funcs(funcs: set, class_dict: dict, out_cpp_dir: str, func_mangl
         is_destructor = False
         if "::~" in decl:
           is_destructor = True
+          # skip destructors
+          continue
         func_info = parse_cpp_func_args.get_func_info(decl)
         if 'return' in func_info:
             func_ret = func_info['return']
@@ -537,7 +539,13 @@ def gen_wrapper_funcs(funcs: set, class_dict: dict, out_cpp_dir: str, func_mangl
                     func_init_entry_str = f"xbtracer_init_destructor_entry({handle_str}, func_entry, need_trace, func_s, paddr_ptr);"
                 elif func_c not in class_no_get_handle:
                     func_init_entry_str = f"xbtracer_init_destructor_entry_handle(func_entry, need_trace, func_s, paddr_ptr);"
-            if is_class_member and func_c:
+            elif is_constructor:
+                if func_c in class_special_handle:
+                    handle_str = "this->" + class_special_handle[func_c]
+                    func_init_entry_str = f"xbtracer_init_constructor_entry({handle_str}, func_entry, need_trace, func_s, paddr_ptr);"
+                elif func_c not in class_no_get_handle:
+                    func_init_entry_str = f"xbtracer_init_constructor_entry_handle(func_entry, need_trace, func_s, paddr_ptr);"
+            elif is_class_member and func_c:
                 if func_c in class_special_handle:
                     handle_str = "this->" + class_special_handle[func_c]
                     func_init_entry_str = f"xbtracer_init_member_func_entry({handle_str}, func_entry, need_trace, func_s, paddr_ptr);"
@@ -580,10 +588,16 @@ def gen_wrapper_funcs(funcs: set, class_dict: dict, out_cpp_dir: str, func_mangl
 """
             lines = lines + """
   xbtracer_proto::Func func_exit;"""
+            func_init_exit_str = "xbtracer_init_func_exit(func_exit, need_trace, func_s);"
             if is_destructor:
                 func_init_exit_str = "xbtracer_init_destructor_exit(func_exit, need_trace, func_s);"
+            elif is_constructor:
+                if func_c in class_special_handle:
+                    handle_str = "this->" + class_special_handle[func_c]
+                    func_init_exit_str = f"xbtracer_init_constructor_exit({handle_str}, func_exit, need_trace, func_s);"
+                elif func_c not in class_no_get_handle:
+                    func_init_exit_str = f"xbtracer_init_constructor_exit_handle(func_exit, need_trace, func_s);"
             else:
-                func_init_exit_str = "xbtracer_init_func_exit(func_exit, need_trace, func_s);"
                 if is_class_member and func_c:
                     if func_c in class_special_handle:
                         handle_str = "this->" + class_special_handle[func_c]

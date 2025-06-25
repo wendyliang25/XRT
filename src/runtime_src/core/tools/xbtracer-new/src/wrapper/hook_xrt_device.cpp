@@ -161,14 +161,14 @@ device(const std::string& bdf)
   void **ofunc_ptr = (void **)&ofunc;
   bool need_trace;
 
-  xbtracer_init_member_func_entry_handle(func_entry, need_trace, func_s, paddr_ptr);
+  xbtracer_init_constructor_entry_handle(func_entry, need_trace, func_s, paddr_ptr);
   xbtracer_write_protobuf_msg(func_entry, need_trace);
   *ofunc_ptr = (void*)paddr_ptr;
 
   ofunc((void*)this, bdf);
 
   xbtracer_proto::Func func_exit;
-  xbtracer_init_member_func_exit_handle(func_exit, need_trace, func_s);
+  xbtracer_init_constructor_exit_handle(func_exit, need_trace, func_s);
   xbtracer_write_protobuf_msg(func_exit, need_trace);
 }
 
@@ -183,14 +183,14 @@ device(unsigned int didx)
   void **ofunc_ptr = (void **)&ofunc;
   bool need_trace;
 
-  xbtracer_init_member_func_entry_handle(func_entry, need_trace, func_s, paddr_ptr);
+  xbtracer_init_constructor_entry_handle(func_entry, need_trace, func_s, paddr_ptr);
   xbtracer_write_protobuf_msg(func_entry, need_trace);
   *ofunc_ptr = (void*)paddr_ptr;
 
   ofunc((void*)this, didx);
 
   xbtracer_proto::Func func_exit;
-  xbtracer_init_member_func_exit_handle(func_exit, need_trace, func_s);
+  xbtracer_init_constructor_exit_handle(func_exit, need_trace, func_s);
   xbtracer_write_protobuf_msg(func_exit, need_trace);
 }
 
@@ -205,14 +205,14 @@ device(xclDeviceHandle dhdl)
   void **ofunc_ptr = (void **)&ofunc;
   bool need_trace;
 
-  xbtracer_init_member_func_entry_handle(func_entry, need_trace, func_s, paddr_ptr);
+  xbtracer_init_constructor_entry_handle(func_entry, need_trace, func_s, paddr_ptr);
   xbtracer_write_protobuf_msg(func_entry, need_trace);
   *ofunc_ptr = (void*)paddr_ptr;
 
   ofunc((void*)this, dhdl);
 
   xbtracer_proto::Func func_exit;
-  xbtracer_init_member_func_exit_handle(func_exit, need_trace, func_s);
+  xbtracer_init_constructor_exit_handle(func_exit, need_trace, func_s);
   xbtracer_write_protobuf_msg(func_exit, need_trace);
 }
 
@@ -227,14 +227,14 @@ error(const std::string& msg)
   void **ofunc_ptr = (void **)&ofunc;
   bool need_trace;
 
-  xbtracer_init_member_func_entry_handle(func_entry, need_trace, func_s, paddr_ptr);
+  xbtracer_init_constructor_entry_handle(func_entry, need_trace, func_s, paddr_ptr);
   xbtracer_write_protobuf_msg(func_entry, need_trace);
   *ofunc_ptr = (void*)paddr_ptr;
 
   ofunc((void*)this, msg);
 
   xbtracer_proto::Func func_exit;
-  xbtracer_init_member_func_exit_handle(func_exit, need_trace, func_s);
+  xbtracer_init_constructor_exit_handle(func_exit, need_trace, func_s);
   xbtracer_write_protobuf_msg(func_exit, need_trace);
 }
 
@@ -260,28 +260,6 @@ operator xclDeviceHandle() const
   xbtracer_write_protobuf_msg(func_exit, need_trace);
 
   return ret_o;
-}
-
-xrt::device::
-~device()
-{
-  const char* func_s = "xrt::device::~device(void)";
-  //typedef void (*func_t)(void*);
-  xbtracer_proto::Func func_entry;
-  proc_addr_type paddr_ptr;
-  //func_t ofunc = nullptr;
-  //void **ofunc_ptr = (void **)&ofunc;
-  bool need_trace;
-
-  xbtracer_init_member_func_entry_handle(func_entry, need_trace, func_s, paddr_ptr);
-  xbtracer_write_protobuf_msg(func_entry, need_trace);
-  //*ofunc_ptr = (void*)paddr_ptr;
-
-  //ofunc((void*)this);
-
-  xbtracer_proto::Func func_exit;
-  xbtracer_init_destructor_exit(func_exit, need_trace, func_s);
-  xbtracer_write_protobuf_msg(func_exit, need_trace);
 }
 
 xrt::uuid

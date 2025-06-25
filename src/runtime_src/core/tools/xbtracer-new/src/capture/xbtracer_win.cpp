@@ -51,12 +51,8 @@ int launch_app(const struct tracer_arg &args)
   // load capturing library
   // we inject the capturing library to child process so in case when child process needs
   // to laod the library with indirect loading, it doesn't need to load it.
-  int ret = inject_library(pi.hProcess, "xrt_coreutil.dll");
-  if (ret) {
-    xbtracer_pcritical("failed to inject XRT coreutil library.");
-  }
-
-  ret = inject_library(pi.hProcess, "xrt_wrapper.dll");
+  // xrt_wrapper.dll depends on xrt_coreutil.dll
+  int ret = inject_library(pi.hProcess, "xrt_wrapper.dll");
   if (ret) {
     xbtracer_pcritical("failed to inject XRT wrapper library.");
   }
@@ -68,10 +64,6 @@ int launch_app(const struct tracer_arg &args)
   CloseHandle(pi.hProcess);
   CloseHandle(pi.hThread);
 
-  while(1)
-  {
-    std::this_thread::sleep_for(std::chrono::seconds(1));
-  }
   return 0;
 }
 

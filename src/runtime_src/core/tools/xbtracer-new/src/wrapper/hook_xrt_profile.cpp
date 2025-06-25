@@ -114,28 +114,6 @@ user_event()
   xbtracer_write_protobuf_msg(func_exit, need_trace);
 }
 
-xrt::profile::user_event::
-~user_event()
-{
-  const char* func_s = "xrt::profile::user_event::~user_event(void)";
-  typedef void (*func_t)(void*);
-  xbtracer_proto::Func func_entry;
-  proc_addr_type paddr_ptr;
-  func_t ofunc = nullptr;
-  void **ofunc_ptr = (void **)&ofunc;
-  bool need_trace;
-
-  xbtracer_init_func_entry(func_entry, need_trace, func_s, paddr_ptr);
-  xbtracer_write_protobuf_msg(func_entry, need_trace);
-  *ofunc_ptr = (void*)paddr_ptr;
-
-  ofunc((void*)this);
-
-  xbtracer_proto::Func func_exit;
-  xbtracer_init_destructor_exit(func_exit, need_trace, func_s);
-  xbtracer_write_protobuf_msg(func_exit, need_trace);
-}
-
 xrt::profile::user_range::
 user_range()
 {
@@ -177,27 +155,5 @@ user_range(const char* label, const char* tooltip)
 
   xbtracer_proto::Func func_exit;
   xbtracer_init_func_exit(func_exit, need_trace, func_s);
-  xbtracer_write_protobuf_msg(func_exit, need_trace);
-}
-
-xrt::profile::user_range::
-~user_range()
-{
-  const char* func_s = "xrt::profile::user_range::~user_range(void)";
-  typedef void (*func_t)(void*);
-  xbtracer_proto::Func func_entry;
-  proc_addr_type paddr_ptr;
-  func_t ofunc = nullptr;
-  void **ofunc_ptr = (void **)&ofunc;
-  bool need_trace;
-
-  xbtracer_init_func_entry(func_entry, need_trace, func_s, paddr_ptr);
-  xbtracer_write_protobuf_msg(func_entry, need_trace);
-  *ofunc_ptr = (void*)paddr_ptr;
-
-  ofunc((void*)this);
-
-  xbtracer_proto::Func func_exit;
-  xbtracer_init_destructor_exit(func_exit, need_trace, func_s);
   xbtracer_write_protobuf_msg(func_exit, need_trace);
 }

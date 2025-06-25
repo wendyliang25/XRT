@@ -11,6 +11,7 @@
 #include <memory>
 #include <mutex>
 #include <version.h>
+
 #include "func.pb.h"
 
 #include <wrapper/tracer.h>
@@ -31,6 +32,31 @@ namespace xrt::tools::xbtracer
       throw std::runtime_error("xbrtracer failer to open lib: \"" +
                                std::string(XBRACER_XRT_COREUTIL_LIB) + "\".");
     }
+    std::get<0>(xrt_dev_ref_tracker) = "xrt::device::~device()";
+    std::get<0>(xrt_kernel_ref_tracker) = "xrt::kernel::~kernel()";
+    std::get<0>(xrt_bo_ref_tracker) = "xrt::bo::~bo()";
+    std::get<0>(xrt_bo_async_ref_tracker) = "xrt::bo::async:~async()";
+    std::get<0>(xrt_hw_context_ref_tracker) = "xrt::hw_context::~hw_context()";
+    std::get<0>(xrt_module_ref_tracker) = "xrt::module::~module()";
+    std::get<0>(xrt_elf_ref_tracker) = "xrt::elf::~elf()";
+    std::get<0>(xrt_fence_ref_tracker) = "xrt::fence::~fence()";
+    std::get<0>(xrt_ip_ref_tracker) = "xrt::ip::~ip()";
+    std::get<0>(xrt_ip_intr_ref_tracker) = "xrt::ip::interrupt::~interrupt()";
+    std::get<0>(xrt_mailbox_ref_tracker) = "xrt::mailbox::~mailbox()";
+    std::get<0>(xrt_dev_err_ref_tracker) = "xrt::device::error::~error()";
+    std::get<0>(xrt_queue_ref_tracker) = "xrt::queue::~queue()";
+    std::get<0>(xrt_run_ref_tracker) = "xrt::run::~run()";
+    std::get<0>(xrt_run_cmd_err_ref_tracker) = "xrt::run::command_error::~command_error()";
+    std::get<0>(xrt_runlist_ref_tracker) = "xrt::runlist::~runlist()";
+    std::get<0>(xrt_runlist_cmd_err_ref_tracker) = "xrt::runlist::command_error::~command_error()";
+    std::get<0>(xrt_xclbin_ref_tracker) = "xrt::xclbin::~xclbin()";
+    std::get<0>(xrt_xclbin_aie_part_ref_tracker) = "xrt::xclbin::aie_partition::~aie_partition()";
+    std::get<0>(xrt_xclbin_arg_ref_tracker) = "xrt::xclbin::arg::~arg()";
+    std::get<0>(xrt_xclbin_ip_ref_tracker) = "xrt::xclbin::ip::~ip()";
+    std::get<0>(xrt_xclbin_kernel_ref_tracker) = "xrt::xclbin::kernel::~kernel()";
+    std::get<0>(xrt_xclbin_mem_ref_tracker) = "xrt::xclbin::mem::~mem()";
+    std::get<0>(xrt_xclbin_repo_ref_tracker) = "xrt::xclbin_repository::~xclbin_repository()";
+    std::get<0>(xrt_xclbin_repo_iter_ref_tracker) = "xrt::xclbin_repository::iterator::~iterator()";
   }
 
   tracer::~tracer()
@@ -125,10 +151,258 @@ namespace xrt::tools::xbtracer
     });
     return instance.get();
   }
+
+  template <typename T>
+  bool
+  local_find_impl_ref_nolock(const std::shared_ptr<T>& sh_impl,
+                             const std::tuple<std::string, std::vector<std::shared_ptr<T>>>& tracker)
+  {
+    auto* impl_ptr = sh_impl.get();
+    for (auto &sh_ptr: std::get<1>(tracker)) {
+      if (impl_ptr == sh_ptr.get()) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  template <typename T>
+  void
+  local_add_impl_ref_nolock(const std::shared_ptr<T>& sh_impl,
+                            std::tuple<std::string, std::vector<std::shared_ptr<T>>>& tracker)
+  {
+    std::get<1>(tracker).push_back(sh_impl);
+    xbtracer_pdebug("Add IMPL TRACE: \"", std::get<0>(tracker), "\", ", sh_impl.get(), ", ref count: ", sh_impl.use_count(), ".");
+  }
+
+  template <typename T>
+  bool
+  local_find_add_impl_ref_nolock(const std::shared_ptr<T>& sh_impl,
+                                 std::tuple<std::string, std::vector<std::shared_ptr<T>>>& tracker,
+				 bool add)
+  {
+    bool found = local_find_impl_ref_nolock(sh_impl, tracker);
+    if (add && !found) {
+      local_add_impl_ref_nolock(sh_impl, tracker);
+    }
+    return found;
+  }
+
+  bool
+  tracer::
+  find_add_impl_ref_nolock(const std::shared_ptr<xrt_core::device>& sh_impl, bool add)
+  {
+    return local_find_add_impl_ref_nolock(sh_impl, xrt_dev_ref_tracker, add);
+  }
+
+  bool
+  tracer::
+  find_add_impl_ref_nolock(const std::shared_ptr<xrt::kernel_impl>& sh_impl, bool add)
+  {
+    return local_find_add_impl_ref_nolock(sh_impl, xrt_kernel_ref_tracker, add);
+  }
+
+  bool
+  tracer::
+  find_add_impl_ref_nolock(const std::shared_ptr<xrt::bo_impl>& sh_impl, bool add)
+  {
+    return local_find_add_impl_ref_nolock(sh_impl, xrt_bo_ref_tracker, add);
+  }
+
+  bool
+  tracer::
+  find_add_impl_ref_nolock(const std::shared_ptr<xrt::bo::async_handle_impl>& sh_impl, bool add)
+  {
+    return local_find_add_impl_ref_nolock(sh_impl, xrt_bo_async_ref_tracker, add);
+  }
+
+  bool
+  tracer::
+  find_add_impl_ref_nolock(const std::shared_ptr<xrt::hw_context_impl>& sh_impl, bool add)
+  {
+    return local_find_add_impl_ref_nolock(sh_impl, xrt_hw_context_ref_tracker, add);
+  }
+
+  bool
+  tracer::
+  find_add_impl_ref_nolock(const std::shared_ptr<xrt::module_impl>& sh_impl, bool add)
+  {
+    return local_find_add_impl_ref_nolock(sh_impl, xrt_module_ref_tracker, add);
+  }
+
+  bool
+  tracer::
+  find_add_impl_ref_nolock(const std::shared_ptr<xrt::ip_impl>& sh_impl, bool add)
+  {
+    return local_find_add_impl_ref_nolock(sh_impl, xrt_ip_ref_tracker, add);
+  }
+
+  bool
+  tracer::
+  find_add_impl_ref_nolock(const std::shared_ptr<xrt::elf_impl>& sh_impl, bool add)
+  {
+    return local_find_add_impl_ref_nolock(sh_impl, xrt_elf_ref_tracker, add);
+  }
+
+  bool
+  tracer::
+  find_add_impl_ref_nolock(const std::shared_ptr<xrt::ip::interrupt_impl>& sh_impl, bool add)
+  {
+    return local_find_add_impl_ref_nolock(sh_impl, xrt_ip_intr_ref_tracker, add);
+  }
+
+  bool
+  tracer::
+  find_add_impl_ref_nolock(const std::shared_ptr<xrt::fence_impl>& sh_impl, bool add)
+  {
+    return local_find_add_impl_ref_nolock(sh_impl, xrt_fence_ref_tracker, add);
+  }
+
+  bool
+  tracer::
+  find_add_impl_ref_nolock(const std::shared_ptr<xrt::mailbox_impl>& sh_impl, bool add)
+  {
+    return local_find_add_impl_ref_nolock(sh_impl, xrt_mailbox_ref_tracker, add);
+  }
+
+  bool
+  tracer::
+  find_add_impl_ref_nolock(const std::shared_ptr<xrt::device::error_impl>& sh_impl, bool add)
+  {
+    return local_find_add_impl_ref_nolock(sh_impl, xrt_dev_err_ref_tracker, add);
+  }
+
+  bool
+  tracer::
+  find_add_impl_ref_nolock(const std::shared_ptr<xrt::queue_impl>& sh_impl, bool add)
+  {
+    return local_find_add_impl_ref_nolock(sh_impl, xrt_queue_ref_tracker, add);
+  }
+
+  bool
+  tracer::
+  find_add_impl_ref_nolock(const std::shared_ptr<xrt::run_impl>& sh_impl, bool add)
+  {
+    return local_find_add_impl_ref_nolock(sh_impl, xrt_run_ref_tracker, add);
+  }
+
+  bool
+  tracer::
+  find_add_impl_ref_nolock(const std::shared_ptr<xrt::run::command_error_impl>& sh_impl, bool add)
+  {
+    return local_find_add_impl_ref_nolock(sh_impl, xrt_run_cmd_err_ref_tracker, add);
+  }
+
+  bool
+  tracer::
+  find_add_impl_ref_nolock(const std::shared_ptr<xrt::runlist_impl>& sh_impl, bool add)
+  {
+    return local_find_add_impl_ref_nolock(sh_impl, xrt_runlist_ref_tracker, add);
+  }
+
+  bool
+  tracer::
+  find_add_impl_ref_nolock(const std::shared_ptr<xrt::runlist::command_error_impl>& sh_impl, bool add)
+  {
+    return local_find_add_impl_ref_nolock(sh_impl, xrt_runlist_cmd_err_ref_tracker, add);
+  }
+
+  bool
+  tracer::
+  find_add_impl_ref_nolock(const std::shared_ptr<xrt::xclbin_impl>& sh_impl, bool add)
+  {
+    return local_find_add_impl_ref_nolock(sh_impl, xrt_xclbin_ref_tracker, add);
+  }
+
+  bool
+  tracer::
+  find_add_impl_ref_nolock(const std::shared_ptr<xrt::xclbin::aie_partition_impl>& sh_impl, bool add)
+  {
+    return local_find_add_impl_ref_nolock(sh_impl, xrt_xclbin_aie_part_ref_tracker, add);
+  }
+
+  bool
+  tracer::
+  find_add_impl_ref_nolock(const std::shared_ptr<xrt::xclbin::arg_impl>& sh_impl, bool add)
+  {
+    return local_find_add_impl_ref_nolock(sh_impl, xrt_xclbin_arg_ref_tracker, add);
+  }
+
+  bool
+  tracer::
+  find_add_impl_ref_nolock(const std::shared_ptr<xrt::xclbin::ip_impl>& sh_impl, bool add)
+  {
+    return local_find_add_impl_ref_nolock(sh_impl, xrt_xclbin_ip_ref_tracker, add);
+  }
+
+  bool
+  tracer::
+  find_add_impl_ref_nolock(const std::shared_ptr<xrt::xclbin::kernel_impl>& sh_impl, bool add)
+  {
+    return local_find_add_impl_ref_nolock(sh_impl, xrt_xclbin_kernel_ref_tracker, add);
+  }
+
+  bool
+  tracer::
+  find_add_impl_ref_nolock(const std::shared_ptr<xrt::xclbin::mem_impl>& sh_impl, bool add)
+  {
+    return local_find_add_impl_ref_nolock(sh_impl, xrt_xclbin_mem_ref_tracker, add);
+  }
+
+  bool
+  tracer::
+  find_add_impl_ref_nolock(const std::shared_ptr<xrt::xclbin_repository_impl>& sh_impl, bool add)
+  {
+    return local_find_add_impl_ref_nolock(sh_impl, xrt_xclbin_repo_ref_tracker, add);
+  }
+
+  bool
+  tracer::
+  find_add_impl_ref_nolock(const std::shared_ptr<xrt::xclbin_repository::iterator_impl>& sh_impl, bool add)
+  {
+    return local_find_add_impl_ref_nolock(sh_impl, xrt_xclbin_repo_iter_ref_tracker, add);
+  }
+
+  void
+  tracer::
+  check_impl_refs(void)
+  {
+    check_impl_refs_tracker_nolock(xrt_dev_ref_tracker);
+    check_impl_refs_tracker_nolock(xrt_kernel_ref_tracker);
+    check_impl_refs_tracker_nolock(xrt_bo_ref_tracker);
+    check_impl_refs_tracker_nolock(xrt_bo_async_ref_tracker);
+    check_impl_refs_tracker_nolock(xrt_hw_context_ref_tracker);
+    check_impl_refs_tracker_nolock(xrt_module_ref_tracker);
+    check_impl_refs_tracker_nolock(xrt_elf_ref_tracker);
+    check_impl_refs_tracker_nolock(xrt_fence_ref_tracker);
+    check_impl_refs_tracker_nolock(xrt_ip_ref_tracker);
+    check_impl_refs_tracker_nolock(xrt_ip_intr_ref_tracker);
+    check_impl_refs_tracker_nolock(xrt_mailbox_ref_tracker);
+    check_impl_refs_tracker_nolock(xrt_dev_err_ref_tracker);
+    check_impl_refs_tracker_nolock(xrt_run_ref_tracker);
+    check_impl_refs_tracker_nolock(xrt_run_cmd_err_ref_tracker);
+    check_impl_refs_tracker_nolock(xrt_runlist_ref_tracker);
+    check_impl_refs_tracker_nolock(xrt_runlist_cmd_err_ref_tracker);
+    check_impl_refs_tracker_nolock(xrt_xclbin_ref_tracker);
+    check_impl_refs_tracker_nolock(xrt_xclbin_aie_part_ref_tracker);
+    check_impl_refs_tracker_nolock(xrt_xclbin_arg_ref_tracker);
+    check_impl_refs_tracker_nolock(xrt_xclbin_ip_ref_tracker);
+    check_impl_refs_tracker_nolock(xrt_xclbin_kernel_ref_tracker);
+    check_impl_refs_tracker_nolock(xrt_xclbin_mem_ref_tracker);
+    check_impl_refs_tracker_nolock(xrt_xclbin_repo_ref_tracker);
+    check_impl_refs_tracker_nolock(xrt_xclbin_repo_iter_ref_tracker);
+  }
+
 } // namespace xrt::tools::xbtracer
 
 std::unique_ptr<xrt::tools::xbtracer::tracer> xrt::tools::xbtracer::tracer::instance = nullptr;
 std::once_flag xrt::tools::xbtracer::tracer::init_instance_flag;
+
+void
+xbtracer_check_impl_refs(void)
+{
+  xrt::tools::xbtracer::tracer::get_instance()->check_impl_refs();
+}
 
 bool
 xbtracer_needs_trace_func(void)

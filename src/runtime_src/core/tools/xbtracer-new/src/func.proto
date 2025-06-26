@@ -5,10 +5,11 @@ package xbtracer_proto;
 
 message Arg {
   required string name = 1;
+  required uint32 index = 2;
   required string type = 3;
   required uint32 size = 4;
   required bytes value= 5;
- }
+}
 
 message Func {
   required string name = 1;

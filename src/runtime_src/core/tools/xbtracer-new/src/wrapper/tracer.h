@@ -6,6 +6,7 @@
 
 #include <chrono>
 #include <cstdint>
+#include <cstdio>
 #include <fstream>
 #include <iostream>
 #include <mutex>
@@ -73,6 +74,7 @@ xbtracer_trace_class_pimpl(const SHPIMPLT& sh_pimpl, PFUNC& func_msg)
 
   xbtracer_proto::Arg* arg = func_msg.add_arg();
   arg->set_name("pimpl");
+  arg->set_index(0);
   arg->set_type("void*");
   arg->set_size(static_cast<uint32_t>(sizeof(void*) & 0xFFFFFFFFU));
   arg->set_value(std::string(reinterpret_cast<const char*>(&this_pimpl_ptr), sizeof(this_pimpl_ptr)));
@@ -163,7 +165,7 @@ public:
   bool
   add_impl_ref(const std::shared_ptr<T>& sh_impl)
   {
-    std::lock_guard<std::mutex> lock(pids_mlock);
+    std::lock_guard<std::mutex> lock(refs_mlock);
     return find_add_impl_ref_nolock(sh_impl, true);
   }
 
@@ -255,11 +257,13 @@ private:
     for (auto it = refs.begin(); it != refs.end(); ) {
       if (it->use_count() >= 2) {
         // still referenced by application
+        // fprintf(stdout, "[XBTRACER]: CHECK REF: TRACE: %s, %p, ref=%lu.\n", func_s, it->get(), it->use_count());
         it++;
       }
       else {
         xbtracer_proto::Func func_entry;
-        xbtracer_pdebug("DESTRUCTOR INSERT: TRACE: \"", func_s, "\", ", it->get(), ".");
+        // This funciton can be called from destructor, at that time, logger may be destructed
+        fprintf(stdout, "[XBTRACER]: DESTRUCTOR INSERT: TRACE: %s, %p, ref=%lu.\n", func_s, it->get(), it->use_count());
         xbrtracer_init_func_proto_msg(func_entry, func_s, xbtracer_proto::Func_FuncStatus_FUNC_ENTRY);
         xbtracer_trace_class_pimpl(*it, func_entry);
         write_protobuf_msg(func_entry);

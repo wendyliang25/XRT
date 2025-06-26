@@ -61,6 +61,7 @@ namespace xrt::tools::xbtracer
 
   tracer::~tracer()
   {
+    // We don't check the tracked XRT objects here as it is not necessary.
     if (coreutil_lib_h) {
       close_library_os(coreutil_lib_h);
     }
@@ -367,6 +368,7 @@ namespace xrt::tools::xbtracer
   tracer::
   check_impl_refs(void)
   {
+    std::lock_guard<std::mutex> lock(refs_mlock);
     check_impl_refs_tracker_nolock(xrt_dev_ref_tracker);
     check_impl_refs_tracker_nolock(xrt_kernel_ref_tracker);
     check_impl_refs_tracker_nolock(xrt_bo_ref_tracker);

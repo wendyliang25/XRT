@@ -17,7 +17,7 @@ using namespace xrt::tools::xbtracer;
 
 static void usage(const char* cmd) {
   std::cout << "Usage: " << cmd << " [options] <App_full_path> [App Arguments]" << std::endl;
-  std::cout << "This program is to test wrapper libraries." << std::endl;
+  std::cout << "This program is to capture XRT APIs calling sequence and arguments." << std::endl;
   std::cout << "Optinoal:" << std::endl;
   std::cout << "\t-h|--help Print usage" << std::endl;
   std::cout << "\t-v|--verbose turn on printing verbosely" << std::endl;
@@ -33,33 +33,26 @@ static int parse_args(struct tracer_arg &args, int argc, const char* argv[])
 
   args.verbose = false;
   bool got_app = false;
-  for (int i = 1; i < argc; i++)
-  {
+  for (int i = 1; i < argc; i++) {
     std::string arg_str = argv[i];
-    if (arg_str == "-h" || arg_str == "--help")
-    {
+    if (arg_str == "-h" || arg_str == "--help") {
       usage(argv[0]);
       std::exit(0);
     }
-    else if ((!got_app) && (arg_str == "-v" || arg_str == "--verbose"))
-    {
+    else if ((!got_app) && (arg_str == "-v" || arg_str == "--verbose")) {
       args.verbose = true;
     }
-    else if ((!got_app) && (arg_str == "-o" || arg_str == "--out_dir"))
-    {
-      args.out_dir = arg_str;
+    else if ((!got_app) && (arg_str == "-o" || arg_str == "--out_dir")) {
+      args.out_dir = argv[++i];
     }
-    else if (!got_app && argv[i][0] == '-')
-    {
+    else if (!got_app && argv[i][0] == '-') {
       std::cerr << "ERROR: xbtracer: unsuppocrted argument: " + arg_str << std::endl;
     }
-    else if (!got_app)
-    {
+    else if (!got_app) {
       args.target_app.push_back(std::string(argv[i]));
       got_app = true;
     }
-    else
-    {
+    else {
       args.target_app.push_back(arg_str);
     }
   }
@@ -73,14 +66,12 @@ static int init_logger(const struct tracer_arg &args)
   // setup logger environment variable, as we need to pass them to child process
   ret = setenv_os("XBRACER_PRINT_NAME", "xbtracer");
   const char* plevel_str = "INFO";
-  if (args.verbose)
-  {
+  if (args.verbose) {
     plevel_str = "DEBUG";
   }
   ret |= setenv_os("XBRACER_PRINT_LEVEL", plevel_str);
 
-  if (ret)
-  {
+  if (ret) {
     std::cerr << "ERROR: xbracer: failer to set logging env." << std::endl;
     return -EINVAL;
   }
@@ -90,12 +81,10 @@ static int init_logger(const struct tracer_arg &args)
 static int init_tracer(const struct tracer_arg &args)
 {
   std::filesystem::path opath;
-  if (args.out_dir.empty())
-  {
+  if (args.out_dir.empty()) {
     opath = std::filesystem::current_path();
   }
-  else
-  {
+  else {
     opath = args.out_dir;
   }
   auto now = std::chrono::system_clock::now();
@@ -109,14 +98,12 @@ static int init_tracer(const struct tracer_arg &args)
 
   std::error_code ec;
   bool created = std::filesystem::create_directories(opath, ec);
-  if (!created)
-  {
+  if (!created) {
     xbtracer_pcritical("failed to create tracer directory \"", opath_str, "\", ", ec.message(), "\".");
   }
 
   int ret = setenv_os("XBTRACER_OUT_DIR", opath_str.c_str());
-  if (ret)
-  {
+  if (ret) {
     xbtracer_pcritical("failed to set tracer output file \"", opath.string(), "\".");
   }
   xbtracer_pinfo("tracer output to directory \"", opath.string(), "\".");
@@ -127,8 +114,7 @@ int main(int argc, const char* argv[])
 {
   struct tracer_arg args;
 
-  if (parse_args(args, argc, argv))
-  {
+  if (parse_args(args, argc, argv)) {
     std::cerr << "ERRPR: xbtracer: failed to parse user input arguments." << std::endl;
   }
 

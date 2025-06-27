@@ -264,7 +264,7 @@ private:
         xbtracer_proto::Func func_entry;
         // This funciton can be called from destructor, at that time, logger may be destructed
         fprintf(stdout, "[XBTRACER]: DESTRUCTOR INSERT: TRACE: %s, %p, ref=%lu.\n", func_s, it->get(), it->use_count());
-        xbrtracer_init_func_proto_msg(func_entry, func_s, xbtracer_proto::Func_FuncStatus_FUNC_ENTRY);
+        xbrtracer_init_func_proto_msg(func_entry, func_s, xbtracer_proto::Func_FuncStatus_FUNC_INJECT);
         xbtracer_trace_class_pimpl(*it, func_entry);
         write_protobuf_msg(func_entry);
         it = refs.erase(it);
@@ -442,7 +442,12 @@ xbtracer_init_constructor_exit(const SHPIMPLT& sh_pimpl, PFUNC& func_msg, bool n
   if (need_trace) {
     xbtracer_add_impl_ref(sh_pimpl);
   }
-  return xbtracer_init_func_exit(func_msg, need_trace, func_s);
+  xbtracer_init_func_exit(func_msg, need_trace, func_s);
+  if (need_trace) {
+    // trace object handle pointer (pimpl) for constructor
+    xbtracer_trace_class_pimpl(sh_pimpl, func_msg);
+  }
+  return true;
 }
 
 template <typename PFUNC, typename SHPIMPLT>

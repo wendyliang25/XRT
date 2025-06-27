@@ -184,6 +184,12 @@ device(unsigned int didx)
   bool need_trace;
 
   xbtracer_init_constructor_entry_handle(func_entry, need_trace, func_s, paddr_ptr);
+  xbtracer_proto::Arg* arg = func_entry.add_arg();
+  arg->set_name("didx");
+  arg->set_index(1);
+  arg->set_type("usigned int");
+  arg->set_size(static_cast<uint32_t>(sizeof(unsigned int) & 0xFFFFFFFFU));
+  arg->set_value(std::string(reinterpret_cast<const char*>(&didx), sizeof(didx)));
   xbtracer_write_protobuf_msg(func_entry, need_trace);
   *ofunc_ptr = (void*)paddr_ptr;
 

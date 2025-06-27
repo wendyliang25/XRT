@@ -51,6 +51,13 @@ add_executable(xbtracer ${XBTRACER_CAPTURE_SRC_FILES})
 target_link_libraries(xbtracer PRIVATE xbtracer_common)
 add_dependencies(xbtracer xbtracer_common)
 
+file(GLOB XBREPLAY_SRC_FILES
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/replay/*.cpp"
+)
+add_executable(xbreplay ${XBREPLAY_SRC_FILES})
+target_link_libraries(xbreplay PRIVATE xbtracer_common xbtracer_protobuf ${Protobuf_LIBRARIES} xrt_coreutil)
+add_dependencies(xbreplay xbtracer_common xbtracer_protobuf xrt_coreutil)
+
 add_executable(xbtracer_dump
   src/misc/xbtracer_dump.cpp
 )

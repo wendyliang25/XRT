@@ -15,6 +15,11 @@
 #include "func.pb.h"
 
 #include <wrapper/tracer.h>
+#ifdef _WIN32
+#include <core/common/windows/win_utils.h>
+#else
+#include <core/common/linux/linux_utils.h>
+#endif
 #include <common/trace_utils.h>
 
 namespace xrt::tools::xbtracer
@@ -428,4 +433,33 @@ xbtrace_untrace_current_func(void)
   uint32_t pid = getpid_current_os();
   xrt::tools::xbtracer::tracer* tracer = xrt::tools::xbtracer::tracer::get_instance();
   tracer->remove_trace_pid(pid);
+}
+
+bool
+xbtracer_trace_file_content(const std::string& fname, uint32_t arg_id,
+                            const std::string& arg_name, xbtracer_proto::Func& func_msg)
+{
+  std::ifstream ifile(fname, std::ios::binary | std::ios::ate);
+  if (!ifile.is_open()) {
+    xbtracer_perror(__func__, ": failed to open \"", fname, "\", ", sys_dep_get_last_err_msg(), ".");
+    return false;
+  }
+
+  std::streamsize size = ifile.tellg();
+  ifile.seekg(0, std::ios::beg);
+
+  std::string buf(size, 0);
+  if (!ifile.read(&buf[0], size)) {
+    xbtracer_perror(__func__, ": failed to read \"", fname, "\", ", sys_dep_get_last_err_msg(), ".");
+    return false;
+  }
+  ifile.close();
+
+  xbtracer_proto::Arg* arg = func_msg.add_arg();
+  arg->set_name(arg_name);
+  arg->set_index(arg_id);
+  arg->set_type("byes");
+  arg->set_size(static_cast<uint32_t>(size & 0xFFFFFFFFU));
+  arg->set_value(buf);
+  return true;
 }

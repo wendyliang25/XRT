@@ -1259,6 +1259,15 @@ xclbin(const std::string& filename)
   bool need_trace;
 
   xbtracer_init_constructor_entry_handle(func_entry, need_trace, func_s, paddr_ptr);
+  xbtracer_proto::Arg* arg = func_entry.add_arg();
+  arg->set_name("filename");
+  arg->set_index(1);
+  arg->set_type("std::string");
+  arg->set_size(static_cast<uint32_t>(filename.length() & 0xFFFFFFFFU));
+  arg->set_value(filename);
+  if (!xbtracer_trace_file_content(filename, 1, "xclbin", func_entry)) {
+    xbtracer_pcritical(std::string(func_s), ": failed to trace xclbin file: \"", filename, "\".");
+  }
   xbtracer_write_protobuf_msg(func_entry, need_trace);
   *ofunc_ptr = (void*)paddr_ptr;
 

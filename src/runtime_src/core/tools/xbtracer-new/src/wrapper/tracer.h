@@ -486,4 +486,7 @@ xbtracer_init_destructor_exit(PFUNC& func_msg, bool need_trace, const char* func
 #define xbtracer_init_destructor_entry_handle(func_msg, need_trace, func_s, paddr_ptr) \
      xbtracer_init_destructor_entry(this->get_handle(), func_msg, need_trace, func_s, paddr_ptr);
 
+bool
+xbtracer_trace_file_content(const std::string& fname, uint32_t arg_id,
+                            const std::string& arg_name, xbtracer_proto::Func& func_msg);
 #endif // tracer_h

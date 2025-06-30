@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (C) 2025 Advanced Micro Devices, Inc. All rights reserved.
 
+#include <cstring>
 #include <iostream>
 #include <replay/xbreplay_common.h>
 
-using namespace xrt::tools::xbtracer;
+namespace xrt::tools::xbtracer
+{
 
 xbreplay_msg_queue::
 xbreplay_msg_queue(): ended(0) {}
@@ -61,40 +63,4 @@ end_queue(void)
   ended = 1;
 }
 
-int
-replayer::
-replay(const xbtracer_proto::Func* entry_msg, const xbtracer_proto::Func* exit_msg)
-{
-  if (!entry_msg) {
-    xbtracer_pcritical("Entry function message is null.");
-  }
-  auto func = get_func_from_signature(entry_msg->name());
-  if (!func) {
-    xbtracer_pinfo("No map function: ", entry_msg->name(), ".");
-    return 0;
-  }
-  return func(entry_msg, exit_msg, *this);
-}
-
-int
-replayer::
-track(std::shared_ptr<xrt::device>& obj, uint64_t impl)
-{
-  return track(obj, impl, dev_tracker);
-}
-
-int
-replayer::
-track(std::shared_ptr<xrt::xclbin>& obj, uint64_t impl)
-{
-  return track(obj, impl, xclbin_tracker);
-}
-
-void
-replayer::
-untrack_all()
-{
-  while(!dev_tracker.empty()) {
-    dev_tracker.pop_back();
-  }
-}
+} // namespace xrt::tools::xbtracer

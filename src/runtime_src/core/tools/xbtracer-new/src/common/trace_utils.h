@@ -8,6 +8,7 @@
 #include <cstring>
 #include <ctime>
 #include <iostream>
+#include <string>
 #include <typeinfo>
 #include "common/trace_logger.h"
 #ifdef _WIN32
@@ -52,5 +53,8 @@ get_size_of_func_mangled_map(void);
 
 const char*
 get_func_mname_from_signature(const char* s);
+
+std::string
+xbtracer_get_timestamp_str(void);
 
 #endif // trace_utils_h

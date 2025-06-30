@@ -83,6 +83,13 @@ track(std::shared_ptr<xrt::device>& obj, uint64_t impl)
   return track(obj, impl, dev_tracker);
 }
 
+int
+replayer::
+track(std::shared_ptr<xrt::xclbin>& obj, uint64_t impl)
+{
+  return track(obj, impl, xclbin_tracker);
+}
+
 void
 replayer::
 untrack_all()

@@ -4,6 +4,7 @@
 #ifndef xbreplay_common_h
 #define xbreplay_common_h
 
+#include <map>
 #include <memory>
 #include <mutex>
 #include <queue>
@@ -41,7 +42,8 @@ namespace xrt::tools::xbtracer
 class xbreplay_msg_queue
 {
 public:
-  xbreplay_msg_queue();
+  xbreplay_msg_queue(void);
+
   void
   push(const std::shared_ptr<xbtracer_proto::Func>& value);
 
@@ -72,58 +74,200 @@ xbreplay_receive_msgs(std::shared_ptr<xbreplay_msg_queue>& queue);
 class replayer
 {
 public:
+  replayer(void);
+
   int
   replay(const xbtracer_proto::Func* entry_msg, const xbtracer_proto::Func* exit_msg);
+
+  int
+  track(std::shared_ptr<xrt::bo>& obj, uint64_t impl);
 
   int
   track(std::shared_ptr<xrt::device>& obj, uint64_t impl);
 
   int
+  track(std::shared_ptr<xrt::hw_context>& obj, uint64_t impl);
+
+  int
+  track(std::shared_ptr<xrt::kernel>& obj, uint64_t impl);
+
+  int
+  track(std::shared_ptr<xrt::run>& obj, uint64_t impl);
+
+  int
   track(std::shared_ptr<xrt::xclbin>& obj, uint64_t impl);
+
+  int
+  track_xclbin_uuid(uint64_t impl, std::string uuid_str);
+
+  int
+  track_kernel_group_id(int traced_id, int replay_id);
+
+  int
+  track_device_handle(uint64_t traced_h, uint64_t impl);
+
+  std::shared_ptr<xrt::bo>
+  get_tracked_bo(uint64_t impl);
+
+  std::shared_ptr<xrt::device>
+  get_tracked_device(uint64_t impl);
+
+  std::shared_ptr<xrt::hw_context>
+  get_tracked_hw_context(uint64_t impl);
+
+  std::shared_ptr<xrt::kernel>
+  get_tracked_kernel(uint64_t impl);
+
+  std::shared_ptr<xrt::run>
+  get_tracked_run(uint64_t impl);
+
+  std::shared_ptr<xrt::xclbin>
+  get_tracked_xclbin(uint64_t impl);
+
+  std::shared_ptr<xrt::xclbin>
+  get_tracked_xclbin(std::string uuid_str);
+
+  int
+  get_tracked_kernel_group_id(int traced_id);
+
+  std::shared_ptr<xrt::device>
+  get_tracked_device_from_handle(uint64_t traced_h);
+
+  void
+  add_xclbin_kernel(uint64_t impl, std::string name, const xrt::xclbin::kernel& kernel);
 
   // we need to explicitly delete all the tracked XRT objects, otherwise in Linux, the application
   // cleanup will crash due to "free(): invalid pointer" when it is cleaning up shared pointers during
   // application is ending.
   void
-  untrack_all();
+  untrack_all(void);
+
+  void
+  untrack_bo(uint64_t impl);
+
+  void
+  untrack_device(uint64_t impl);
+
+  void
+  untrack_hw_context(uint64_t impl);
+
+  void
+  untrack_kernel(uint64_t impl);
+
+  void
+  untrack_run(uint64_t impl);
+
+  void
+  untrack_xclbin(uint64_t impl);
 
 private:
+  void
+  register_bo_func(void);
+
+  void
+  register_device_func(void);
+
+  void
+  register_hw_context_func(void);
+
+  void
+  register_kernel_func(void);
+
+  void
+  register_run_func(void);
+
+  void
+  register_xclbin_func(void);
+
+  std::function<int(const xbtracer_proto::Func*, const xbtracer_proto::Func*)>
+  get_func_from_signature(std::string func_s);
+
   template <typename T>
   int
-  track(std::shared_ptr<T>& obj, uint64_t impl, std::vector<std::tuple<uint64_t, std::shared_ptr<T>>>& tracker)
+  track(std::shared_ptr<T>& obj, uint64_t impl, std::map<uint64_t, std::shared_ptr<T>>& tracker)
   {
     std::lock_guard<std::mutex> lock(trackers_mlock);
-    for (const auto& o: tracker) {
-      const auto& t_obj = std::get<1>(o);
+    auto it = tracker.find(impl);
+    if (it != tracker.end()) {
+      const auto& t_obj = it->second;
       if (obj.get() == t_obj.get()) {
-        const auto& t_impl = std::get<0>(o);
-        if (impl != t_impl) {
           const std::type_info& t_type_info = typeid(T);
-          xbtracer_pcritical("failed to track pointer of ", t_type_info.name(), ", ptr: ", obj.get(),
-                            " already in tracker, impl: ", reinterpret_cast<void *>(impl), ", ",
-                            reinterpret_cast<void*>(t_impl), ".");
-        }
-        else {
-          return 0;
-        }
+          xbtracer_pcritical("failed to track pointer of ", t_type_info.name(), ", impl:",
+                             reinterpret_cast<void *>(impl), ", ptr: ", obj.get(),
+                             " already in tracker.");
       }
+      return 0;
     }
-    std::tuple<uint64_t, std::shared_ptr<T>> t(impl, obj);
-    tracker.push_back(t);
+    tracker[impl] = obj;
     return 0;
   }
 
+  template <typename T>
+  std::shared_ptr<T>
+  get_tracked_obj(uint64_t impl, std::map<uint64_t, std::shared_ptr<T>>& tracker)
+  {
+    std::lock_guard<std::mutex> lock(trackers_mlock);
+    auto it = tracker.find(impl);
+    if (it != tracker.end()) {
+      return it->second;
+    }
+    return std::shared_ptr<T>(nullptr);
+  }
+
+  template <typename T>
+  void
+  untrack(uint64_t impl, std::map<uint64_t, std::shared_ptr<T>>& tracker)
+  {
+    std::lock_guard<std::mutex> lock(trackers_mlock);
+    auto it = tracker.find(impl);
+    if (it != tracker.end()) {
+      tracker.erase(it);
+    }
+  }
+
   std::mutex trackers_mlock;
-  std::vector<std::tuple<uint64_t, std::shared_ptr<xrt::device>>> dev_tracker;
-  std::vector<std::tuple<uint64_t, std::shared_ptr<xrt::xclbin>>> xclbin_tracker;
-  std::vector<std::string> xclbins;
+  std::map<std::string,
+           std::function<int(const xbtracer_proto::Func*,
+                         const xbtracer_proto::Func*)>> xbreplay_funcs_map;
+  std::map<uint64_t, std::shared_ptr<xrt::bo>> bo_tracker;
+  std::map<uint64_t, std::shared_ptr<xrt::device>> dev_tracker;
+  std::map<uint64_t, std::shared_ptr<xrt::hw_context>> hw_context_tracker;
+  std::map<uint64_t, std::shared_ptr<xrt::kernel>> kernel_tracker;
+  std::map<uint64_t, std::shared_ptr<xrt::run>> run_tracker;
+  std::map<uint64_t, std::shared_ptr<xrt::xclbin>> xclbin_tracker;
+  std::vector<std::tuple<uint64_t, std::string, xrt::xclbin::kernel>> xclbin_kernels;
+  std::map<std::string, uint64_t> xclbin_uuids;
+  std::map<int, int> kernel_group_ids;
+  std::map<uint64_t, uint64_t> device_handles;
 };
 
-std::function<int(const xbtracer_proto::Func*, const xbtracer_proto::Func*, replayer&)>
-get_func_from_signature(std::string func_s);
+int
+get_impl_from_proto_arg(const xbtracer_proto::Arg& arg, uint64_t& impl);
+
+template <typename T>
+int
+get_arg_from_proto_arg(const xbtracer_proto::Func* func_msg, uint32_t arg_id, T& obj)
+{
+  const xbtracer_proto::Arg& arg = func_msg->arg(arg_id);
+  if (arg.value().length() != sizeof(obj)) {
+    xbtracer_perror(func_msg->name(), ", arg[", arg_id, "]: size mismatch: ",
+                    arg.value().length(), ",", sizeof(obj));
+    return -1;
+  }
+  std::memcpy(&obj, arg.value().data(), sizeof(obj));
+  return 0;
+}
+
+int
+copy_data_from_proto_arg(const xbtracer_proto::Func& func_msg, uint32_t arg_id, void* buf,
+                        size_t size);
+
+const void*
+get_data_from_proto_arg(const xbtracer_proto::Func& func_msg, uint32_t arg_id, size_t& size);
 
 } // namespace xrt::tools::xbtracer
 
 extern std::shared_ptr<xrt::tools::xbtracer::replayer> replayer_sh;
+
 
 #endif // xbreplay_common_h

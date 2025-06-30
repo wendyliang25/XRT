@@ -78,6 +78,9 @@ public:
   int
   track(std::shared_ptr<xrt::device>& obj, uint64_t impl);
 
+  int
+  track(std::shared_ptr<xrt::xclbin>& obj, uint64_t impl);
+
   // we need to explicitly delete all the tracked XRT objects, otherwise in Linux, the application
   // cleanup will crash due to "free(): invalid pointer" when it is cleaning up shared pointers during
   // application is ending.
@@ -112,6 +115,8 @@ private:
 
   std::mutex trackers_mlock;
   std::vector<std::tuple<uint64_t, std::shared_ptr<xrt::device>>> dev_tracker;
+  std::vector<std::tuple<uint64_t, std::shared_ptr<xrt::xclbin>>> xclbin_tracker;
+  std::vector<std::string> xclbins;
 };
 
 std::function<int(const xbtracer_proto::Func*, const xbtracer_proto::Func*, replayer&)>

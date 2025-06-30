@@ -945,6 +945,10 @@ get_uuid() const
 
   xbtracer_proto::Func func_exit;
   xbtracer_init_member_func_exit_handle(func_exit, need_trace, func_s);
+  if (need_trace) {
+    std::string uuid_str = ret_o.to_string();
+    xbtracer_trace_arg_string("uuid", uuid_str, func_exit);
+  }
   xbtracer_write_protobuf_msg(func_exit, need_trace);
 
   return ret_o;
@@ -1259,14 +1263,11 @@ xclbin(const std::string& filename)
   bool need_trace;
 
   xbtracer_init_constructor_entry_handle(func_entry, need_trace, func_s, paddr_ptr);
-  xbtracer_proto::Arg* arg = func_entry.add_arg();
-  arg->set_name("filename");
-  arg->set_index(1);
-  arg->set_type("std::string");
-  arg->set_size(static_cast<uint32_t>(filename.length() & 0xFFFFFFFFU));
-  arg->set_value(filename);
-  if (!xbtracer_trace_file_content(filename, 1, "xclbin", func_entry)) {
-    xbtracer_pcritical(std::string(func_s), ": failed to trace xclbin file: \"", filename, "\".");
+  if (need_trace) {
+    xbtracer_trace_arg_string("filename", filename, func_entry);
+    if (!xbtracer_trace_file_content(filename, 1, "xclbin", func_entry)) {
+      xbtracer_pcritical(std::string(func_s), ": failed to trace xclbin file: \"", filename, "\".");
+    }
   }
   xbtracer_write_protobuf_msg(func_entry, need_trace);
   *ofunc_ptr = (void*)paddr_ptr;

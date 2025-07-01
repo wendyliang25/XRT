@@ -67,6 +67,7 @@ namespace xrt::tools::xbtracer
   tracer::~tracer()
   {
     // We don't check the tracked XRT objects here as it is not necessary.
+    // check_impl_refs();
     if (coreutil_lib_h) {
       close_library_os(coreutil_lib_h);
     }
@@ -374,18 +375,16 @@ namespace xrt::tools::xbtracer
   check_impl_refs(void)
   {
     std::lock_guard<std::mutex> lock(refs_mlock);
-    check_impl_refs_tracker_nolock(xrt_dev_ref_tracker);
-    check_impl_refs_tracker_nolock(xrt_kernel_ref_tracker);
-    check_impl_refs_tracker_nolock(xrt_bo_ref_tracker);
     check_impl_refs_tracker_nolock(xrt_bo_async_ref_tracker);
+    check_impl_refs_tracker_nolock(xrt_bo_ref_tracker);
+    check_impl_refs_tracker_nolock(xrt_fence_ref_tracker);
+    check_impl_refs_tracker_nolock(xrt_kernel_ref_tracker);
     check_impl_refs_tracker_nolock(xrt_hw_context_ref_tracker);
     check_impl_refs_tracker_nolock(xrt_module_ref_tracker);
     check_impl_refs_tracker_nolock(xrt_elf_ref_tracker);
-    check_impl_refs_tracker_nolock(xrt_fence_ref_tracker);
     check_impl_refs_tracker_nolock(xrt_ip_ref_tracker);
     check_impl_refs_tracker_nolock(xrt_ip_intr_ref_tracker);
     check_impl_refs_tracker_nolock(xrt_mailbox_ref_tracker);
-    check_impl_refs_tracker_nolock(xrt_dev_err_ref_tracker);
     check_impl_refs_tracker_nolock(xrt_run_ref_tracker);
     check_impl_refs_tracker_nolock(xrt_run_cmd_err_ref_tracker);
     check_impl_refs_tracker_nolock(xrt_runlist_ref_tracker);
@@ -398,6 +397,8 @@ namespace xrt::tools::xbtracer
     check_impl_refs_tracker_nolock(xrt_xclbin_mem_ref_tracker);
     check_impl_refs_tracker_nolock(xrt_xclbin_repo_ref_tracker);
     check_impl_refs_tracker_nolock(xrt_xclbin_repo_iter_ref_tracker);
+    check_impl_refs_tracker_nolock(xrt_dev_err_ref_tracker);
+    check_impl_refs_tracker_nolock(xrt_dev_ref_tracker);
   }
 
 } // namespace xrt::tools::xbtracer
@@ -461,5 +462,18 @@ xbtracer_trace_file_content(const std::string& fname, uint32_t arg_id,
   arg->set_type("byes");
   arg->set_size(static_cast<uint32_t>(size & 0xFFFFFFFFU));
   arg->set_value(buf);
+  return true;
+}
+
+bool
+xbtracer_trace_mem_dump(const void* data, size_t size, uint32_t arg_id,
+                        const std::string& arg_name, xbtracer_proto::Func& func_msg)
+{
+  xbtracer_proto::Arg* arg = func_msg.add_arg();
+  arg->set_name(arg_name);
+  arg->set_index(arg_id);
+  arg->set_type("byes");
+  arg->set_size(static_cast<uint32_t>(size & 0xFFFFFFFFU));
+  arg->set_value(std::string(reinterpret_cast<const char*>(data), size));
   return true;
 }

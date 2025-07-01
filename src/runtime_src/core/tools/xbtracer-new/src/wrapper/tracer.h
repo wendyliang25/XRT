@@ -40,10 +40,11 @@
 template <typename PFUNC>
 void
 xbtracer_trace_arg_proto(PFUNC& func_msg, const char* arg_name, const char* type_name,
-                         const std::string& val)
+                         uint32_t arg_id, const std::string& val)
 {
   xbtracer_proto::Arg* arg_proto = func_msg.add_arg();
   arg_proto->set_name(arg_name);
+  arg_proto->set_index(arg_id);
   arg_proto->set_type(type_name);
   arg_proto->set_size(static_cast<uint32_t>(val.length() & 0xFFFFFFFFU));
   arg_proto->set_value(val);
@@ -51,33 +52,52 @@ xbtracer_trace_arg_proto(PFUNC& func_msg, const char* arg_name, const char* type
 
 template <typename T, typename PFUNC>
 void
+xbtracer_trace_arg(const char* arg_name, const char* type_name, uint32_t arg_id, const T& arg,
+                   PFUNC& func_msg)
+{
+  xbtracer_trace_arg_proto(func_msg, arg_name, type_name, arg_id,
+                           std::string(reinterpret_cast<const char*>(&arg), sizeof(arg)));
+}
+
+template <typename T, typename PFUNC>
+void
+xbtracer_trace_arg(const char* arg_name, const char* type_name, const T& arg, PFUNC& func_msg)
+{
+  xbtracer_trace_arg_proto(func_msg, arg_name, type_name, 0,
+                           std::string(reinterpret_cast<const char*>(&arg), sizeof(arg)));
+}
+
+template <typename T, typename PFUNC>
+void
 xbtracer_trace_arg(const char* arg_name, const T& arg, PFUNC& func_msg)
 {
-  xbtracer_trace_arg_proto(func_msg, arg_name, typeid(arg).name(),
+  xbtracer_trace_arg_proto(func_msg, arg_name, typeid(arg).name(), 0,
                            std::string(reinterpret_cast<const char*>(&arg), sizeof(arg)));
 }
 
 template <typename PFUNC>
 void
-xbtracer_trace_arg(const char* arg_name, const std::string& arg, PFUNC& func_msg)
+xbtracer_trace_arg_string(const char* arg_name, const std::string& arg, PFUNC& func_msg)
 {
-  xbtracer_trace_arg_proto(func_msg, arg_name, typeid(arg).name(), arg);
+  xbtracer_trace_arg_proto(func_msg, arg_name, "std::string", 0, arg);
+}
+
+template <typename SHPIMPLT, typename PFUNC>
+void
+xbtracer_trace_class_pimpl_with_arg(const SHPIMPLT& sh_pimpl, PFUNC& func_msg,
+                                    std::string arg_name, uint32_t arg_id)
+{
+  // all classes we trace has pimpl handle or similar
+  // the pointer of the handle will be used as an ID of the object
+  const void* this_pimpl_ptr = reinterpret_cast<const void*>(sh_pimpl.get());
+  xbtracer_trace_arg(arg_name.c_str(), "void", arg_id, this_pimpl_ptr, func_msg);
 }
 
 template <typename SHPIMPLT, typename PFUNC>
 void
 xbtracer_trace_class_pimpl(const SHPIMPLT& sh_pimpl, PFUNC& func_msg)
 {
-  // all classes we trace has pimpl handle or similar
-  // the pointer of the handle will be used as an ID of the object
-  const void* this_pimpl_ptr = reinterpret_cast<const void*>(sh_pimpl.get());
-
-  xbtracer_proto::Arg* arg = func_msg.add_arg();
-  arg->set_name("pimpl");
-  arg->set_index(0);
-  arg->set_type("void*");
-  arg->set_size(static_cast<uint32_t>(sizeof(void*) & 0xFFFFFFFFU));
-  arg->set_value(std::string(reinterpret_cast<const char*>(&this_pimpl_ptr), sizeof(this_pimpl_ptr)));
+  xbtracer_trace_class_pimpl_with_arg(sh_pimpl, func_msg, "pimpl", 0);
 }
 
 template <typename PFUNC, typename PFUNC_TRACE_TYPE>
@@ -489,4 +509,8 @@ xbtracer_init_destructor_exit(PFUNC& func_msg, bool need_trace, const char* func
 bool
 xbtracer_trace_file_content(const std::string& fname, uint32_t arg_id,
                             const std::string& arg_name, xbtracer_proto::Func& func_msg);
+
+bool
+xbtracer_trace_mem_dump(const void* data, size_t size, uint32_t arg_id,
+                        const std::string& arg_name, xbtracer_proto::Func& func_msg);
 #endif // tracer_h

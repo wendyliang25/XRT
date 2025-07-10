@@ -64,9 +64,8 @@ static int init_logger(const struct tracer_arg &args)
   // setup logger environment variable, as we need to pass them to child process
   ret = setenv_os("XBRACER_PRINT_NAME", "xbtracer");
   const char* plevel_str = "INFO";
-  if (args.verbose) {
+  if (args.verbose)
     plevel_str = "DEBUG";
-  }
   ret |= setenv_os("XBRACER_PRINT_LEVEL", plevel_str);
 
   if (ret) {
@@ -79,26 +78,22 @@ static int init_logger(const struct tracer_arg &args)
 static int init_tracer(const struct tracer_arg &args)
 {
   std::filesystem::path opath;
-  if (args.out_dir.empty()) {
+  if (args.out_dir.empty())
     opath = std::filesystem::current_path();
-  }
-  else {
+  else
     opath = args.out_dir;
-  }
   std::string timestamp_str = xbtracer_get_timestamp_str();
   opath.append("trace_" + timestamp_str);
   std::string opath_str = opath.string();
 
   std::error_code ec;
   bool created = std::filesystem::create_directories(opath, ec);
-  if (!created) {
+  if (!created)
     xbtracer_pcritical("failed to create tracer directory \"", opath_str, "\", ", ec.message(), "\".");
-  }
 
   int ret = setenv_os("XBTRACER_OUT_DIR", opath_str.c_str());
-  if (ret) {
+  if (ret)
     xbtracer_pcritical("failed to set tracer output file \"", opath.string(), "\".");
-  }
   xbtracer_pinfo("tracer output to directory \"", opath.string(), "\".");
   return 0;
 }
@@ -107,9 +102,8 @@ int main(int argc, const char* argv[])
 {
   struct tracer_arg args;
 
-  if (parse_args(args, argc, argv)) {
+  if (parse_args(args, argc, argv))
     std::cerr << "ERRPR: xbtracer: failed to parse user input arguments." << std::endl;
-  }
 
   init_logger(args);
   init_tracer(args);

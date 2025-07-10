@@ -74,3 +74,15 @@ target_include_directories(xbtracer PRIVATE ${DETOURS_INCLUDE})
 target_link_libraries(xbtracer PRIVATE ms_detours)
 add_dependencies(xbtracer ms_detours)
 endif(WIN32)
+
+# Install our built executable
+set(XBTRACER_TARGETS xbtracer xbreplay)
+install (TARGETS ${XBTRACER_TARGETS}
+  RUNTIME DESTINATION ${XRT_INSTALL_UNWRAPPED_DIR} COMPONENT ${XRT_BASE_COMPONENT})
+set (XBTRACER_HELPER_SCRIPTS xbtracer.bat xbreplay.bat)
+install (PROGRAMS ${XBTRACER_HELPER_SCRIPTS}
+  DESTINATION ${XRT_INSTALL_BIN_DIR} COMPONENT ${XRT_BASE_COMPONENT})
+install(TARGETS xrt_wrapper
+  RUNTIME DESTINATION ${XRT_INSTALL_BIN_DIR} COMPONENT ${XRT_BASE_COMPONENT}
+  LIBRARY DESTINATION ${XRT_INSTALL_LIB_DIR} COMPONENT ${XRT_BASE_COMPONENT}
+)

@@ -53,9 +53,8 @@ int launch_app(const struct tracer_arg &args)
   // to laod the library with indirect loading, it doesn't need to load it.
   // xrt_wrapper.dll depends on xrt_coreutil.dll
   int ret = inject_library(pi.hProcess, "xrt_wrapper.dll");
-  if (ret) {
+  if (ret)
     xbtracer_pcritical("failed to inject XRT wrapper library.");
-  }
 
   ResumeThread(pi.hThread);
   // Wait for the process to finish

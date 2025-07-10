@@ -24,17 +24,14 @@ void
 store_hook_funcs(void)
 {
   HMODULE wrapper_dll_h = GetModuleHandleA(wrapper_lib_name);
-  if (!wrapper_dll_h) {
+  if (!wrapper_dll_h)
     xbtracer_pcritical("failed to get handle of \"", std::string(wrapper_lib_name), "\",",
                        sys_dep_get_last_err_msg(), ".");
-  }
   HMODULE xrt_dll_h = GetModuleHandleA(xrt_coreutil_name);
-  if (!xrt_dll_h) {
+  if (!xrt_dll_h)
     xbtracer_pcritical("failed to get handle of \"", std::string(xrt_coreutil_name), "\",",
                        sys_dep_get_last_err_msg(), ".");
-  }
-  for (uint32_t i = 1; i < get_size_of_func_mangled_map(); i += 2)
-  {
+  for (uint32_t i = 1; i < get_size_of_func_mangled_map(); i += 2) {
     const char* func_s = func_mangled_map[i - 1];
     const char* mangled_name = func_mangled_map[i];
     FARPROC paddr_o = GetProcAddress(xrt_dll_h, mangled_name);
@@ -93,10 +90,9 @@ detour_detach_xrt_funcs(void)
     PVOID& paddr_o_r = std::get<2>(fmap);
 
     LONG ret = DetourDetach(&paddr_o_r, paddr_w);
-    if (ret != NO_ERROR) {
+    if (ret != NO_ERROR)
       xbtracer_pcritical("failed to detach detour for \"", std::string(mangled_name), "\", ",
                          ret, ".");
-    }
     xbtracer_pdebug("detach detour for \"", std::string(mangled_name), "\".");
   }
   DetourTransactionCommit();

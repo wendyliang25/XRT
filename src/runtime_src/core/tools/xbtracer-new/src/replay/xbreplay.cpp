@@ -31,9 +31,8 @@ std::optional<std::shared_ptr<xbreplay_msg_queue>>
 xbreplay_get_msg_queue_from_tid(const std::thread::id& tid)
 {
   for (auto& t_queue: threads_queues) {
-    if (std::get<0>(t_queue).get_id() == tid) {
+    if (std::get<0>(t_queue).get_id() == tid)
       return std::get<1>(t_queue);
-    }
   }
   return std::nullopt;
 }
@@ -87,14 +86,12 @@ xbreplay_coded_get_sequence_from_file(std::ifstream& input)
   google::protobuf::io::IstreamInputStream raw_input(&input);
   google::protobuf::io::CodedInputStream coded_input(&raw_input);
   uint32_t size;
-  if (!coded_input.ReadVarint32(&size)) {
+  if (!coded_input.ReadVarint32(&size))
     xbtracer_pcritical("failed to read header protobuf message length.");
-  }
   google::protobuf::io::CodedInputStream::Limit limit = coded_input.PushLimit(size);
   xbtracer_proto::XrtExportApiCapture header_msg;
-  if (!header_msg.ParseFromCodedStream(&coded_input)) {
+  if (!header_msg.ParseFromCodedStream(&coded_input))
       xbtracer_pcritical("failed to parse header from coded protobuf input.");
-  }
   coded_input.PopLimit(limit);
   xbtracer_pinfo("APIs sequence captured for XRT version: ", header_msg.version(), ".");
 
@@ -113,18 +110,16 @@ xbreplay_coded_get_sequence_from_file(std::ifstream& input)
   while (coded_input.ReadVarint32(&size)) {
     limit = coded_input.PushLimit(size);
     std::shared_ptr<xbtracer_proto::Func> sh_func_msg = std::make_shared<xbtracer_proto::Func>();
-    if (!sh_func_msg->ParseFromCodedStream(&coded_input)) {
+    if (!sh_func_msg->ParseFromCodedStream(&coded_input))
         xbtracer_pcritical("failed to parse header from coded protobuf input.");
-    }
     coded_input.PopLimit(limit);
     msg_queue_sh->push(sh_func_msg);
   }
   xbtracer_pinfo("Done reading XRT APIs...");
   msg_queue_sh->end_queue();
 
-  for (auto& tq: threads_queues) {
+  for (auto& tq: threads_queues)
     std::get<0>(tq).join();
-  }
   google::protobuf::ShutdownProtobufLibrary();
   return true;
 }
@@ -139,19 +134,16 @@ int main(int argc, const char* argv[])
   }
 
   struct cmd_arg args;
-  if (parse_args(args, argc, argv)) {
+  if (parse_args(args, argc, argv))
     xbtracer_pcritical("failed to parse user input argumetns.");
-  }
 
   std::ifstream in_file(args.in_file, std::ios::binary);
-  if (!in_file.is_open()) {
+  if (!in_file.is_open())
     xbtracer_pcritical("failed to open protobuf file \"", args.in_file, "\".");
-  }
 
   xbtracer_pinfo("Replaying \"", args.in_file, "\".");
-  if (!xbreplay_coded_get_sequence_from_file(in_file)) {
+  if (!xbreplay_coded_get_sequence_from_file(in_file))
     xbtracer_pcritical("Failed to replay \"", args.in_file, "\".");
-  }
 
   in_file.close();
   return 0;

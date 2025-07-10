@@ -14,9 +14,7 @@ int
 setenv_os(const char* name, const char* val)
 {
   if (SetEnvironmentVariable(name, val))
-  {
     return 0;
-  }
   return -EINVAL;
 }
 
@@ -24,8 +22,7 @@ int
 getenv_os(const char* name, char *buf, uint32_t len)
 {
   DWORD rlen = GetEnvironmentVariable(name, buf, len);
-  if (rlen > (DWORD)len)
-  {
+  if (rlen > (DWORD)len) {
     buf[0] = 0;
     return -EINVAL;
   }
@@ -41,8 +38,8 @@ localtime_os(std::tm& tm, const std::time_t& t)
 uint32_t
 getpid_current_os(void)
 {
-    DWORD pid = GetCurrentProcessId();
-    return static_cast<uint32_t>(pid & 0xFFFFFFFFU);
+  DWORD pid = GetCurrentProcessId();
+  return static_cast<uint32_t>(pid & 0xFFFFFFFFU);
 }
 
 int
@@ -51,30 +48,23 @@ inject_library(HANDLE hprocess, const char* lib_path)
   // Get the address of LoadLibraryA in kernel32.dll
   HMODULE hkernel32 = GetModuleHandle("kernel32.dll");
   if (!hkernel32)
-  {
     xbtracer_pcritical("inject \"", std::string(lib_path),
                        "\" failed, failed to get handle to kernel32.dll.");
-  }
 
   FARPROC load_lib_addr = GetProcAddress(hkernel32, "LoadLibraryA");
   if (!load_lib_addr)
-  {
     xbtracer_pcritical("inject \"", std::string(lib_path),
                        "\" failed, failed to get address of LoadLibraryA.");
-  }
 
   // Allocate memory in the target process for the library path
   void* remote_mem = VirtualAllocEx(hprocess, nullptr, strlen(lib_path) + 1,
                                     MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
   if (!remote_mem)
-  {
     xbtracer_pcritical("inject \"", std::string(lib_path),
                        "\" failed, failed to allocate memory in target process.");
-  }
 
   // Write the library path to the allocated memory
-  if (!WriteProcessMemory(hprocess, remote_mem, lib_path, strlen(lib_path) + 1, nullptr))
-  {
+  if (!WriteProcessMemory(hprocess, remote_mem, lib_path, strlen(lib_path) + 1, nullptr)) {
     VirtualFreeEx(hprocess, remote_mem, 0, MEM_RELEASE);
     xbtracer_pcritical("inject \"", std::string(lib_path),
                         "\" failed, failed to write library path to target process memory.");
@@ -83,8 +73,7 @@ inject_library(HANDLE hprocess, const char* lib_path)
   // Create a remote thread in the target process to load the library
   HANDLE hthread = CreateRemoteThread(hprocess, nullptr, 0, (LPTHREAD_START_ROUTINE)load_lib_addr,
                                       remote_mem, 0, nullptr);
-  if (!hthread)
-  {
+  if (!hthread) {
     VirtualFreeEx(hprocess, remote_mem, 0, MEM_RELEASE);
     xbtracer_pcritical("inject \"", std::string(lib_path),
                        "\" failed, failed to create remote thread in target process,",
@@ -111,9 +100,7 @@ void
 close_library_os(lib_handle_type handle)
 {
   if (handle)
-  {
     FreeLibrary(handle);
-  }
 }
 
 proc_addr_type
@@ -122,8 +109,7 @@ get_proc_addr_os(lib_handle_type handle, const char* symbol)
   HMODULE hmodule = static_cast<HMODULE>(handle);
   FARPROC paddr = GetProcAddress(hmodule, symbol);
 
-  if (!paddr)
-  {
+  if (!paddr) {
     xbtracer_perror("failed to get address of symbol \"", symbol, "\".");
     return nullptr;
   }

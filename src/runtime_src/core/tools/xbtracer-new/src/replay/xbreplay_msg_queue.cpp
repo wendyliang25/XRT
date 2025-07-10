@@ -27,9 +27,8 @@ xbreplay_msg_queue::
 try_pop(std::shared_ptr<xbtracer_proto::Func>& result)
 {
   std::lock_guard<std::mutex> lock(mlock);
-  if (queue.empty()) {
+  if (queue.empty())
     return false;
-  }
   result = queue.front();
   queue.pop();
   return true;

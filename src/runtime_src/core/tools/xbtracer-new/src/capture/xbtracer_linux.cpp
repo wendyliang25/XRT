@@ -23,29 +23,23 @@ namespace xrt::tools::xbtracer
 static std::string get_so_path(const std::string &so_name)
 {
   void* handle = dlopen(so_name.c_str(), RTLD_LAZY);
-  if (!handle)
-  {
+  if (!handle) {
     xbtracer_pcritical("failed to load: \"", so_name, "\".");
-  }
 
   void* addr = dlsym(handle, "func_mangled_map");
   if (!addr)
-  {
     xbtracer_pcritical("failed to load symbol from \"", so_name, "\".");
-  }
 
   // Get the path of the shared object
   Dl_info dl_info;
   int ret = dladdr(addr, &dl_info);
-  if (ret && dl_info.dli_fname)
-  {
+  if (ret && dl_info.dli_fname) {
     std::string so_path = std::string(dl_info.dli_fname);
     xbtracer_pdebug("wrapper library is \"", so_path, "\".");
     dlclose(handle); // Close the handle
     return so_path;
   }
-  else
-  {
+  else {
     dlclose(handle); // Close the handle
     xbtracer_pcritical("failed to retrieve \"", so_name, "\".");
   }
@@ -58,32 +52,23 @@ int launch_app(const struct tracer_arg &args)
   // Linux uses LD_PRELOAD to enforce preload XRT wrapper library
   std::string wrapper_path = get_so_path(WRAPPER_LIB);
   if (wrapper_path.empty())
-  {
-    // critical error will throw runtime error
     xbtracer_pcritical("failed to find wrapper lib \"", WRAPPER_LIB, "\".");
-  }
 
   xbtracer_pdebug("set LD_PRELOAD to \"", wrapper_path, "\".");
   int ret = setenv("LD_PRELOAD", wrapper_path.c_str(), 1);
   if (ret)
-  {
     xbtracer_pcritical("failed to set LD_PRELOAD to \"", wrapper_path, "\".");
-  }
 
   pid_t pid = fork();
-  if (pid == 0)
-  {
+  if (pid == 0) {
     const char* preload = getenv("LD_PRELOAD");
     if (!preload)
-    {
       xbtracer_pcritical("no LD_PRELOAD is set in child process.");
-    }
     xbtracer_pdebug("LD_PRELOAD in child process is set to: \"", std::string(preload), "\".");
     // child process to launch the target application
     std::vector<char *> c_args;
     c_args.reserve(args.target_app.size() + 1);
-    for (const std::string& arg : args.target_app)
-    {
+    for (const std::string& arg : args.target_app) {
       c_args.push_back(const_cast<char*>(arg.c_str()));
     }
     c_args.push_back(nullptr);
@@ -91,13 +76,11 @@ int launch_app(const struct tracer_arg &args)
     // exec() functions only return if an error has occurred.
     perror("execv");
   }
-  else if (pid > 0)
-  {
+  else if (pid > 0) {
     // parent process, waits for child process to finish
     wait(nullptr);
   }
-  else
-  {
+  else {
     // fork failed
     xbtracer_pcritical("failed to fork to launch target application.");
   }

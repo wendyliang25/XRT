@@ -7,8 +7,7 @@
 proc_addr_type
 xbtracer_get_original_func_addr(const char* symbol)
 {
-  xrt::tools::xbtracer::tracer* tracer = xrt::tools::xbtracer::tracer::get_instance();
-  return tracer->get_proc_addr(symbol);
+  return xrt::tools::xbtracer::tracer::get_instance().get_proc_addr(symbol);
 }
 
 #endif // __linux__

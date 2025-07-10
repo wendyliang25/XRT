@@ -24,19 +24,16 @@
 
 namespace xrt::tools::xbtracer
 {
-
   tracer::tracer(const std::string& outf, tracer::level tl) :
 	 tracer_ofile(outf, std::ios::out | std::ios::binary | std::ios::trunc),
          tlevel(tl)
   {
-    if (!tracer_ofile || !tracer_ofile.is_open()) {
+    if (!tracer_ofile || !tracer_ofile.is_open())
       throw std::runtime_error("xbtracer failed to open output file: \"" + std::string(outf) + "\".");
-    }
     coreutil_lib_h = load_library_os(XBRACER_XRT_COREUTIL_LIB);
-    if (!coreutil_lib_h) {
+    if (!coreutil_lib_h)
       throw std::runtime_error("xbrtracer failer to open lib: \"" +
                                std::string(XBRACER_XRT_COREUTIL_LIB) + "\".");
-    }
     std::get<0>(xrt_dev_ref_tracker) = "xrt::device::~device()";
     std::get<0>(xrt_kernel_ref_tracker) = "xrt::kernel::~kernel()";
     std::get<0>(xrt_bo_ref_tracker) = "xrt::bo::~bo()";
@@ -66,14 +63,10 @@ namespace xrt::tools::xbtracer
 
   tracer::~tracer()
   {
-    // We don't check the tracked XRT objects here as it is not necessary.
-    // check_impl_refs();
-    if (coreutil_lib_h) {
+    if (coreutil_lib_h)
       close_library_os(coreutil_lib_h);
-    }
-    if (tracer_ofile.is_open()) {
+    if (tracer_ofile.is_open())
       tracer_ofile.close();
-    }
   }
 
   proc_addr_type
@@ -109,13 +102,12 @@ namespace xrt::tools::xbtracer
     std::lock_guard<std::mutex> lock(pids_mlock);
     auto is_matched = [pid](uint32_t _pid) { return pid == _pid; };
     auto it = std::remove_if(trace_pids.begin(), trace_pids.end(), is_matched);
-    if (it != trace_pids.end()) {
+    if (it != trace_pids.end())
       return true;
-    }
     return false;
   }
 
-  tracer*
+  tracer&
   tracer::get_instance()
   {
     std::call_once(init_instance_flag, []() {
@@ -130,18 +122,15 @@ namespace xrt::tools::xbtracer
       if (strlen(tlevel)) {
 	// TODO: we only support DEFAULT tracing level for now.
 	std::string tlevel_str = tlevel;
-        if (tlevel_str != "DEFAULT") {
+        if (tlevel_str != "DEFAULT")
           throw std::runtime_error("xbtracer: unsupported tracing level: \"" + tlevel_str + "\".");
-	}
       }
 
       std::filesystem::path opath;
-      if (!strlen(odir)) {
+      if (!strlen(odir))
         opath = std::filesystem::current_path();
-      }
-      else {
+      else
         opath = odir;
-      }
       auto pid = getpid_current_os();
       opath.append(std::string("trace_protobuf" + std::to_string(pid) + ".bin"));
       // convert path to string first before converting it to c string to
@@ -152,11 +141,10 @@ namespace xrt::tools::xbtracer
       GOOGLE_PROTOBUF_VERIFY_VERSION;
       xbtracer_proto::XrtExportApiCapture msg;
       msg.set_version(XRT_DRIVER_VERSION);
-      if (!instance->write_protobuf_msg(msg)) {
+      if (!instance->write_protobuf_msg(msg))
         xbtracer_pcritical("get tracer instance failed, failed to log version information.");
-      }
     });
-    return instance.get();
+    return *instance;
   }
 
   template <typename T>
@@ -166,9 +154,8 @@ namespace xrt::tools::xbtracer
   {
     auto* impl_ptr = sh_impl.get();
     for (auto &sh_ptr: std::get<1>(tracker)) {
-      if (impl_ptr == sh_ptr.get()) {
+      if (impl_ptr == sh_ptr.get())
         return true;
-      }
     }
     return false;
   }
@@ -409,31 +396,28 @@ std::once_flag xrt::tools::xbtracer::tracer::init_instance_flag;
 void
 xbtracer_check_impl_refs(void)
 {
-  xrt::tools::xbtracer::tracer::get_instance()->check_impl_refs();
+  xrt::tools::xbtracer::tracer::get_instance().check_impl_refs();
 }
 
 bool
 xbtracer_needs_trace_func(void)
 {
   uint32_t pid = getpid_current_os();
-  xrt::tools::xbtracer::tracer* tracer = xrt::tools::xbtracer::tracer::get_instance();
-  return !tracer->is_pid_traced(pid);
+  return !xrt::tools::xbtracer::tracer::get_instance().is_pid_traced(pid);
 }
 
 bool
 xbtrace_trace_current_func(void)
 {
   uint32_t pid = getpid_current_os();
-  xrt::tools::xbtracer::tracer* tracer = xrt::tools::xbtracer::tracer::get_instance();
-  return tracer->trace_pid(pid);
+  return xrt::tools::xbtracer::tracer::get_instance().trace_pid(pid);
 }
 
 void
 xbtrace_untrace_current_func(void)
 {
   uint32_t pid = getpid_current_os();
-  xrt::tools::xbtracer::tracer* tracer = xrt::tools::xbtracer::tracer::get_instance();
-  tracer->remove_trace_pid(pid);
+  xrt::tools::xbtracer::tracer::get_instance().remove_trace_pid(pid);
 }
 
 bool

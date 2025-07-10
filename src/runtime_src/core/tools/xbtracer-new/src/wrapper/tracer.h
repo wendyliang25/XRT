@@ -150,6 +150,7 @@ public:
   {
     uint32_t msg_size = msg.ByteSizeLong() & 0xFFFFFFFFU;
 
+    std::lock_guard<std::mutex> lock(trace_mlock);
     google::protobuf::io::OstreamOutputStream zero_copy_output(&tracer_ofile);
     google::protobuf::io::CodedOutputStream coded_output(&zero_copy_output);
 
@@ -170,7 +171,7 @@ public:
   is_pid_traced(uint32_t pid);
 
   static
-  tracer*
+  tracer&
   get_instance();
 
   template <typename T>
@@ -277,13 +278,14 @@ private:
     for (auto it = refs.begin(); it != refs.end(); ) {
       if (it->use_count() >= 2) {
         // still referenced by application
-        // fprintf(stdout, "[XBTRACER]: CHECK REF: TRACE: %s, %p, ref=%lu.\n", func_s, it->get(), it->use_count());
+        //xbtracer_pdebug("DESTRUCTOR INSERT: TRACE: ", func_s, ", ", it->get(), ", ref=",
+        //                it->use_count(), ".");
         it++;
       }
       else {
         xbtracer_proto::Func func_entry;
-        // This funciton can be called from destructor, at that time, logger may be destructed
-        fprintf(stdout, "[XBTRACER]: DESTRUCTOR INSERT: TRACE: %s, %p, ref=%lu.\n", func_s, it->get(), it->use_count());
+        xbtracer_pdebug("DESTRUCTOR INSERT: TRACE: ", func_s, ", ", it->get(), ", ref=",
+                        it->use_count(), ".");
         xbrtracer_init_func_proto_msg(func_entry, func_s, xbtracer_proto::Func_FuncStatus_FUNC_INJECT);
         xbtracer_trace_class_pimpl(*it, func_entry);
         write_protobuf_msg(func_entry);
@@ -298,8 +300,9 @@ private:
   level tlevel;
   lib_handle_type coreutil_lib_h;
   std::vector<uint32_t> trace_pids;
-  std::mutex pids_mlock;
-  std::mutex refs_mlock;
+  std::mutex pids_mlock; // track PIDs lock
+  std::mutex refs_mlock; // track references lock
+  std::mutex trace_mlock; // writing messages for functions APIs lock
   std::tuple<std::string, std::vector<std::shared_ptr<xrt_core::device>>> xrt_dev_ref_tracker;
   std::tuple<std::string, std::vector<std::shared_ptr<xrt::kernel_impl>>> xrt_kernel_ref_tracker;
   std::tuple<std::string, std::vector<std::shared_ptr<xrt::bo_impl>>> xrt_bo_ref_tracker;
@@ -333,14 +336,14 @@ template <typename T>
 bool
 xbtracer_find_impl_ref(const std::shared_ptr<T>& sh_impl)
 {
-  return xrt::tools::xbtracer::tracer::get_instance()->find_impl_ref(sh_impl);
+  return xrt::tools::xbtracer::tracer::get_instance().find_impl_ref(sh_impl);
 }
 
 template <typename T>
 bool
 xbtracer_add_impl_ref(const std::shared_ptr<T>& sh_impl)
 {
-  return xrt::tools::xbtracer::tracer::get_instance()->add_impl_ref(sh_impl);
+  return xrt::tools::xbtracer::tracer::get_instance().add_impl_ref(sh_impl);
 }
 
 void
@@ -350,10 +353,9 @@ template <typename protobuf_msg>
 bool
 xbtracer_write_protobuf_msg(const protobuf_msg& msg, bool need_trace)
 {
-  if (!need_trace) {
+  if (!need_trace)
     return true;
-  }
-  return xrt::tools::xbtracer::tracer::get_instance()->write_protobuf_msg(msg);
+  return xrt::tools::xbtracer::tracer::get_instance().write_protobuf_msg(msg);
 }
 
 proc_addr_type
@@ -374,13 +376,11 @@ xbtracer_init_func_entry(PFUNC& func_msg, bool& need_trace, const char* func_s,
                          proc_addr_type& paddr_ptr)
 {
   const char* func_mname = get_func_mname_from_signature(func_s);
-  if (!func_mname) {
+  if (!func_mname)
     xbtracer_pcritical("failed to get mangled name for function\"", std::string(func_s), "\".");
-  }
   paddr_ptr = xbtracer_get_original_func_addr(func_mname);
-  if (!paddr_ptr) {
+  if (!paddr_ptr)
     xbtracer_pcritical("failed to get function\"", std::string(func_s), "\", \"", std::string(func_s), "\".");
-  }
 
   if (!xbtracer_needs_trace_func()) {
     // if function doesn't need to be traced, do not initialize protobuf message
@@ -403,9 +403,8 @@ template <typename PFUNC>
 bool
 xbtracer_init_func_exit(PFUNC& func_msg, bool need_trace, const char* func_s)
 {
-  if (!need_trace) {
+  if (!need_trace)
     return true;
-  }
   xbtrace_untrace_current_func();
   xbrtracer_init_func_proto_msg(func_msg, func_s, xbtracer_proto::Func_FuncStatus_FUNC_EXIT);
   return true;
@@ -420,9 +419,8 @@ xbtracer_init_member_func_entry(const SHPIMPLT& sh_pimpl,
   bool ret = xbtracer_init_func_entry(func_msg, need_trace, func_s, paddr_ptr);
   if (need_trace) {
     // trace object handle pointer (pimpl) for member function
-    if (!xbtracer_find_impl_ref(sh_pimpl)) {
-      xbtracer_perror("member func: \"", func_s, "\" impl: ", sh_pimpl.get(), " not tracked.");
-    }
+    if (!xbtracer_find_impl_ref(sh_pimpl))
+      xbtracer_pinfo("member func: \"", func_s, "\" impl: ", sh_pimpl.get(), " not tracked.");
     xbtracer_trace_class_pimpl(sh_pimpl, func_msg);
   }
   return ret;
@@ -433,10 +431,9 @@ bool
 xbtracer_init_member_func_exit(const SHPIMPLT& sh_pimpl, PFUNC& func_msg, bool& need_trace, const char* func_s)
 {
   bool ret = xbtracer_init_func_exit(func_msg, need_trace, func_s);
-  if (need_trace) {
-    // trace object handle pointer (pimpl) for member function
+  // trace object handle pointer (pimpl) for member function
+  if (need_trace)
     xbtracer_trace_class_pimpl(sh_pimpl, func_msg);
-  }
   return ret;
 }
 
@@ -447,10 +444,8 @@ xbtracer_init_constructor_entry(const SHPIMPLT& sh_pimpl,
                                 proc_addr_type& paddr_ptr)
 {
   bool ret = xbtracer_init_func_entry(func_msg, need_trace, func_s, paddr_ptr);
-  if (need_trace) {
-    // TODO: needs to handle class objects release
+  if (need_trace)
     xbtracer_trace_class_pimpl(sh_pimpl, func_msg);
-  }
   return ret;
 }
 
@@ -459,14 +454,12 @@ bool
 xbtracer_init_constructor_exit(const SHPIMPLT& sh_pimpl, PFUNC& func_msg, bool need_trace,
 		               const char* func_s)
 {
-  if (need_trace) {
+  if (need_trace)
     xbtracer_add_impl_ref(sh_pimpl);
-  }
   xbtracer_init_func_exit(func_msg, need_trace, func_s);
-  if (need_trace) {
-    // trace object handle pointer (pimpl) for constructor
+  // trace object handle pointer (pimpl) for constructor
+  if (need_trace)
     xbtracer_trace_class_pimpl(sh_pimpl, func_msg);
-  }
   return true;
 }
 
@@ -477,10 +470,8 @@ xbtracer_init_destructor_entry(const SHPIMPLT& sh_pimpl,
                                 proc_addr_type& paddr_ptr)
 {
   bool ret = xbtracer_init_func_entry(func_msg, need_trace, func_s, paddr_ptr);
-  if (need_trace) {
-    // TODO: needs to handle class objects release
+  if (need_trace)
     xbtracer_trace_class_pimpl(sh_pimpl, func_msg);
-  }
   return ret;
 }
 

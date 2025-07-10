@@ -34,9 +34,7 @@ print_all(std::ostream& os, T& first, Args&... args)
 {
   print_one(os, std::forward<T>(first));
   if constexpr (sizeof...(args) > 0)
-  {
     print_all(os, std::forward<Args>(args)...);
-  }
 }
 
 class logger
@@ -60,7 +58,7 @@ public:
   ~logger();
 
   static
-  logger*
+  logger&
   get_instance();
 
   template<typename... Args>
@@ -68,44 +66,31 @@ public:
   print(level l, Args&... args)
   {
     if (l > plevel)
-    {
       return;
-    }
+
     std::string level_str;
     if (l == level::CRITICAL)
-    {
       level_str = "CRITICAL";
-    }
     else if (l == level::ERR)
-    {
       level_str = "ERROR";
-    }
     else if (l == level::WARNING)
-    {
       level_str = "WARNING";
-    }
     else if (l == level::INFO)
-    {
       level_str = "INFO";
-    }
     else
-    {
       level_str = "DEBUG";
-    }
+
     std::string prefix = std::string(level_str) + ": [" + lname + "]: ";
     print_one(std::cout, prefix);
     print_all(std::cout, std::forward<Args>(args)...);
     std::cout << std::endl;
-    if (ofile.is_open())
-    {
+    if (ofile.is_open()) {
       print_one(ofile, prefix);
       print_all(ofile, std::forward<Args>(args)...);
       ofile << std::endl;
     }
     if (l == level::CRITICAL)
-    {
       throw std::runtime_error(lname + "hit critical error.");
-    }
   }
 
 private:
@@ -122,40 +107,40 @@ template<typename... Args>
 void
 xbtracer_pcritical(const Args&... args)
 {
-  xrt::tools::xbtracer::logger::get_instance()->print(xrt::tools::xbtracer::logger::level::CRITICAL,
-                                                      args...);
+  xrt::tools::xbtracer::logger::get_instance().print(xrt::tools::xbtracer::logger::level::CRITICAL,
+                                                     args...);
 }
 
 template<typename... Args>
 void
 xbtracer_perror(const Args&... args)
 {
-  xrt::tools::xbtracer::logger::get_instance()->print(xrt::tools::xbtracer::logger::level::ERR,
-                                                      args...);
+  xrt::tools::xbtracer::logger::get_instance().print(xrt::tools::xbtracer::logger::level::ERR,
+                                                     args...);
 }
 
 template<typename... Args>
 void
 xbtracer_pwarning(const Args&... args)
 {
-  xrt::tools::xbtracer::logger::get_instance()->print(xrt::tools::xbtracer::logger::level::WARNING,
-                                                      args...);
+  xrt::tools::xbtracer::logger::get_instance().print(xrt::tools::xbtracer::logger::level::WARNING,
+                                                     args...);
 }
 
 template<typename... Args>
 void
 xbtracer_pinfo(const Args&... args)
 {
-  xrt::tools::xbtracer::logger::get_instance()->print(xrt::tools::xbtracer::logger::level::INFO,
-                                                      args...);
+  xrt::tools::xbtracer::logger::get_instance().print(xrt::tools::xbtracer::logger::level::INFO,
+                                                     args...);
 }
 
 template<typename... Args>
 void
 xbtracer_pdebug(const Args&... args)
 {
-  xrt::tools::xbtracer::logger::get_instance()->print(xrt::tools::xbtracer::logger::level::DEBUG,
-                                                      args...);
+  xrt::tools::xbtracer::logger::get_instance().print(xrt::tools::xbtracer::logger::level::DEBUG,
+                                                     args...);
 }
 
 #endif // xbtracer_common_logger_h

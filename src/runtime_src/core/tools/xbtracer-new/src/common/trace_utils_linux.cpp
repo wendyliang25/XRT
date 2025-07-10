@@ -23,15 +23,11 @@ getenv_os(const char* name, char* buf, uint32_t len)
   const char *tmpstr = getenv(name);
 
   if (!tmpstr)
-  {
     return 0;
-  }
 
   size_t env_len = strlen(tmpstr);
   if ((len + 1) < env_len)
-  {
     return -EINVAL;
-  }
   strcpy(buf, tmpstr);
 
   return env_len;
@@ -41,9 +37,7 @@ int
 localtime_os(std::tm& tm, const std::time_t& t)
 {
   if (!localtime_r(&t, &tm))
-  {
     return -EINVAL;
-  }
   return 0;
 }
 
@@ -65,9 +59,7 @@ void
 close_library_os(lib_handle_type handle)
 {
   if (handle)
-  {
     dlclose(handle);
-  }
 }
 
 proc_addr_type
@@ -75,8 +67,7 @@ get_proc_addr_os(lib_handle_type handle, const char* symbol)
 {
   void* paddr = dlsym(handle, symbol);
 
-  if (!paddr)
-  {
+  if (!paddr) {
     xbtracer_perror("failed to get address of symbol \"", symbol, "\".");
     return nullptr;
   }

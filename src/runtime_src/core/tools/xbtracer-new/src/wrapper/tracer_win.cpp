@@ -55,6 +55,123 @@ store_hook_funcs(void)
   }
 }
 
+typedef BOOL(WINAPI* CreateProcessA_t)(LPCSTR lpApplicationName,
+                                       LPSTR lpCommandLine,
+                                       LPSECURITY_ATTRIBUTES lpProcessAttributes,
+                                       LPSECURITY_ATTRIBUTES lpThreadAttributes,
+                                       BOOL bInheritHandles,
+                                       DWORD dwCreationFlags,
+                                       LPVOID lpEnvironment,
+                                       LPCSTR lpCurrentDirectory,
+                                       LPSTARTUPINFOA lpStartupInfo,
+                                       LPPROCESS_INFORMATION lpProcessInformation);
+
+typedef BOOL(WINAPI* CreateProcessW_t)(LPCWSTR lpApplicationName,
+                                       LPWSTR lpCommandLine,
+                                       LPSECURITY_ATTRIBUTES lpProcessAttributes,
+                                       LPSECURITY_ATTRIBUTES lpThreadAttributes,
+                                       BOOL bInheritHandles,
+                                       DWORD dwCreationFlags,
+                                       LPVOID lpEnvironment,
+                                       LPCWSTR lpCurrentDirectory,
+                                       LPSTARTUPINFOW lpStartupInfo,
+                                       LPPROCESS_INFORMATION lpProcessInformation);
+
+static
+BOOL
+WINAPI
+HookCreateProcessA(
+    LPCSTR lpApplicationName,
+    LPSTR lpCommandLine,
+    LPSECURITY_ATTRIBUTES lpProcessAttributes,
+    LPSECURITY_ATTRIBUTES lpThreadAttributes,
+    BOOL bInheritHandles,
+    DWORD dwCreationFlags,
+    LPVOID lpEnvironment,
+    LPCSTR lpCurrentDirectory,
+    LPSTARTUPINFOA lpStartupInfo,
+    LPPROCESS_INFORMATION lpProcessInformation
+) {
+  xbtracer_pdebug(__func__, " called with command line: ", lpCommandLine, ".");
+  // Call the original CreateProcess function
+  CreateProcessA_t oCreateProcessA = (CreateProcessA_t)xbtracer_get_original_func_addr("CreateProcessA");
+  BOOL ret = DetourCreateProcessWithDllA(
+      lpApplicationName,
+      lpCommandLine,
+      lpProcessAttributes,
+      lpThreadAttributes,
+      bInheritHandles,
+      dwCreationFlags,
+      lpEnvironment,
+      lpCurrentDirectory,
+      lpStartupInfo,
+      lpProcessInformation,
+      "xrt_wrapper.dll",
+      oCreateProcessA);
+  if (!ret)
+    xbtracer_pcritical("failed to call the original CreateProcssA for: ", lpCommandLine,
+                       ", ", sys_dep_get_last_err_msg(), ".");
+  return ret;
+}
+
+static
+BOOL
+WINAPI
+HookCreateProcessW(
+    LPCWSTR lpApplicationName,
+    LPWSTR lpCommandLine,
+    LPSECURITY_ATTRIBUTES lpProcessAttributes,
+    LPSECURITY_ATTRIBUTES lpThreadAttributes,
+    BOOL bInheritHandles,
+    DWORD dwCreationFlags,
+    LPVOID lpEnvironment,
+    LPCWSTR lpCurrentDirectory,
+    LPSTARTUPINFOW lpStartupInfo,
+    LPPROCESS_INFORMATION lpProcessInformation
+) {
+  xbtracer_pdebug(__func__);
+  std::wcout << lpApplicationName << std::endl;
+  std::wcout << lpCommandLine << std::endl;
+  // Call the original CreateProcess function
+  CreateProcessW_t oCreateProcessW = (CreateProcessW_t)xbtracer_get_original_func_addr("CreateProcessW");
+  BOOL ret = DetourCreateProcessWithDllW(
+      lpApplicationName,
+      lpCommandLine,
+      lpProcessAttributes,
+      lpThreadAttributes,
+      bInheritHandles,
+      dwCreationFlags,
+      lpEnvironment,
+      lpCurrentDirectory,
+      lpStartupInfo,
+      lpProcessInformation,
+      "xrt_wrapper.dll",
+      oCreateProcessW);
+  if (!ret)
+    xbtracer_pcritical("failed to call the original CreateProcssW,", sys_dep_get_last_err_msg(), ".");
+  return ret;
+}
+
+static
+void
+store_hook_win_funcs()
+{
+  std::map<const char*, PVOID> func_map;
+  func_map["CreateProcessA"] = reinterpret_cast<PVOID>(&HookCreateProcessA);
+  func_map["CreateProcessW"] = reinterpret_cast<PVOID>(&HookCreateProcessW);
+  const char* win_dll_name = "kernel32.dll";
+  for (const auto& pair : func_map) {
+    const char* func_name = pair.first;
+    FARPROC paddr_o = GetProcAddress(GetModuleHandleA(win_dll_name), func_name);
+    if (!paddr_o)
+      xbtracer_pcritical("failed to get ", func_name, " address, ", sys_dep_get_last_err_msg(), ".");
+    std::tuple<const char*, PVOID, PVOID> fmap(func_name, pair.second,
+                                             reinterpret_cast<PVOID>(paddr_o));
+    hook_funcs_map.push_back(std::move(fmap));
+    xbtracer_pdebug("Hooked win API: ", func_name, ".");
+  }
+}
+
 static
 int
 detour_attach_xrt_funcs(void)
@@ -108,6 +225,7 @@ DllMain(HMODULE hmodule, DWORD  ul_reason_for_call, LPVOID lp_reserved)
   if (ul_reason_for_call == DLL_PROCESS_ATTACH) {
     xbtracer_pdebug("attaching \"", std::string(wrapper_lib_name), "\".");
     store_hook_funcs();
+    store_hook_win_funcs();
     detour_attach_xrt_funcs();
   } else if (ul_reason_for_call == DLL_PROCESS_DETACH) {
     xbtracer_pdebug("detaching \"", std::string(wrapper_lib_name), "\".");

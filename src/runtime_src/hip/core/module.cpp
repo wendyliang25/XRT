@@ -62,6 +62,7 @@ function(module_xclbin* xclbin_mod_hdl, const xrt::module& xrt_module, const std
   : m_xclbin_module{xclbin_mod_hdl}
   , m_func_name{name}
   , m_xrt_kernel{xrt::ext::kernel{m_xclbin_module->get_hw_context(), xrt_module, name}}
+  , m_runs_container{xrt::core::hip::hip_container<function, xrt::run>::get_instance(256)}
 {}
 
 // Global map of modules

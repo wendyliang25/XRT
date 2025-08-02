@@ -107,14 +107,19 @@ public:
 class function
 {
   module_xclbin* m_xclbin_module = nullptr;
-  std::vector<xrt::run> m_runs_cache; // cache for the runs to this function
-  std::mutex m_runs_mutex; // lock to m_runs_cache
   std::string m_func_name;
   xrt::kernel m_xrt_kernel;
+  std::shared_ptr<hip_container<function, xrt::run>> m_runs_container;
 
 public:
   function() = default;
   function(module_xclbin* mod_hdl, const xrt::module& xrt_module, const std::string& name);
+  ~function()
+  {
+    if (m_runs_container) {
+      m_runs_container->remove(this);
+    }
+  }
 
   module_xclbin*
   get_module() const
@@ -131,22 +136,33 @@ public:
   xrt::run
   get_run()
   {
-    {
-      std::scoped_lock lock(m_runs_mutex);
-      if (!m_runs_cache.empty()) {
-        auto run = std::move(m_runs_cache.back());
-        m_runs_cache.pop_back();
+    auto opt_run = m_runs_container->get(this);
+    if (opt_run)
+      return opt_run.value();
+
+    try {
+      auto run = xrt::run(m_xrt_kernel);
+      return run;
+    }
+    catch (const xrt_core::system_error& e) {
+      if (e.get() == ENOSPC) {
+        m_runs_container->stop_caching();
+        auto run = xrt::run(m_xrt_kernel);
+        m_runs_container->resume_caching();
         return run;
+      } else {
+        throw; // rethrow other exceptions which are not ENOSPC
       }
     }
-    return xrt::run(m_xrt_kernel);
+    catch (...) {
+      throw; //Catch all other exceptions and rethrow
+    }
   }
 
   void
   release_run(xrt::run&& run)
   {
-    std::scoped_lock lock(m_runs_mutex);
-    m_runs_cache.push_back(std::move(run));
+    m_runs_container->push(this, std::move(run));
   }
 };
 

@@ -40,6 +40,12 @@ scan_devices(std::vector<std::shared_ptr<dev>>& ready_list,
     catch (const std::invalid_argument& ex) {
       continue;
     }
+    catch (const xrt_core::system_error& ex) {
+      if (ex.code().value() == EINVAL)
+        continue;
+      else
+        throw;
+    }
   }
 }
 

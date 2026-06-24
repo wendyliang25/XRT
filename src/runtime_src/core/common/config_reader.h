@@ -181,6 +181,18 @@ get_aie_dtrace()
   return value;
 }
 
+// Inline JSON blob carrying XDP profiling runtime configuration.
+// When non-empty, XDP parses this and uses it to drive per-plugin settings
+// (e.g. control_instrumentation for aie_dtrace) in preference to the
+// legacy AIE_*_settings.* xrt.ini sections. See
+// xdp/profile/plugin/vp_base/profiling_runtime_config.h for the consumer.
+inline std::string
+get_profiling_runtime_config()
+{
+  static std::string value = detail::get_string_value("Debug.profiling_runtime_config", "");
+  return value;
+}
+
 inline bool
 get_aie_debug()
 {
@@ -608,6 +620,13 @@ inline bool
 get_enable_aied()
 {
   static bool value = detail::get_bool_value("Runtime.enable_aied",true);
+  return value;
+}
+
+inline std::string
+get_aie_coredump_file()
+{
+  static std::string value = detail::get_string_value("Runtime.aie_coredump_file", "");
   return value;
 }
 
@@ -1162,7 +1181,14 @@ get_dtrace_control_file_path()
 inline unsigned int
 get_dtrace_log_level()
 {
-  static unsigned int value = detail::get_uint_value("Debug.dtrace_log_level", 1);
+  static unsigned int value = detail::get_uint_value("Debug.dtrace_log_level", 0);
+  return value;
+}
+
+inline bool
+get_dtrace_output_json_format()
+{
+  static bool value = detail::get_bool_value("Debug.dtrace_output_json_format", false);
   return value;
 }
 

@@ -4,7 +4,7 @@
 #define XRT_CORE_COMMON_SOURCE
 
 // Local - Include Files
-#include "smi.h"
+#include "core/common/smi/smi.h"
 
 // 3rd Party Library - Include Files
 #include <boost/property_tree/json_parser.hpp>
@@ -171,7 +171,8 @@ smi_hardware_config()
     {{0x1B0A, 0x00}, hardware_type::npu3_B01},
     {{0x1B0B, 0x00}, hardware_type::npu3_B02},
     {{0x1B0C, 0x00}, hardware_type::npu3_B03},
-    {{0xb052, 0x01}, hardware_type::aie2ps}
+    {{0xb052, 0x01}, hardware_type::aie2ps},
+    {{0xfe02, 0x00}, hardware_type::npu3_aie2ps}
   };
   // NOLINTEND(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
 }
@@ -187,6 +188,19 @@ get_hardware_type(const xq::pcie_id::data& dev) const
 }
 
 tuple_vector
+smi::
+get_subcommands_list() const 
+{
+  std::lock_guard<std::mutex> lock(m_mutex);
+  tuple_vector out;
+  out.reserve(m_subcommands.size());
+  for (const auto& [name, subcmd] : m_subcommands) {
+    out.emplace_back(std::make_tuple(name, subcmd.get_description(), subcmd.get_type()));
+  }
+  return out;
+}
+
+tuple_vector
 get_list(const std::string& subcommand, const std::string& suboption) 
 {
   return instance()->get_list(subcommand, suboption);
@@ -196,6 +210,12 @@ tuple_vector
 get_option_options(const std::string& subcommand) 
 {
   return instance()->get_option_options(subcommand);
+}
+
+tuple_vector
+get_subcommands_list() 
+{
+  return instance()->get_subcommands_list();
 }
 
 } // namespace xrt_core::smi
